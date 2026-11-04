@@ -155,7 +155,7 @@ input::placeholder{color:#6f8a79}
 <div id="app"></div>
 <div id="toast" class="toast" hidden></div>
 
-<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.3/dist/mqtt.min.js"></script>
 <script>
 const AL = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const POS = [
@@ -172,8 +172,7 @@ const CARD_ICONS = {
 
 const S = { screen:"home", mode:null, code:null, me:null, room:null, view:null,
   ui:{ draft:"", sub:false, pickLetter:false, err:"", net:"", name:"", joinCode:"", localNames:[], localDraft:"" } };
-let capsDone=false, store=null, unsub=null, netTimer=null, peer=null;
-const PFX = "alfabeto-embaralhado-v1-";
+let capsDone=false, store=null, unsub=null, netTimer=null;
 
 /* ---------- helpers ---------- */
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -1174,55 +1173,6 @@ function fitHTML(p){
 }
 
 /* ---------- stores ---------- */
-/* Anfitrião: guarda o estado da sala e repassa para todos os conectados */
-function hostStore(pr){
-  let data=null, ls=[]; const conns=new Set();
-  const emit = () => { ls.forEach(f=>f(clone(data),{fromCache:false})); conns.forEach(c=>{ try{ c.open && c.send({type:"state", d:data}); }catch(e){} }); };
-  pr.on("connection", c => {
-    c.on("open", () => { conns.add(c); c.send({type:"state", d:data}); });
-    c.on("data", m => { if(!m || !data) return; if(m.type==="patch" && isObj(m.d)){ data=merge(data, m.d); emit(); } });
-    c.on("close", () => conns.delete(c));
-    c.on("error", () => conns.delete(c));
-  });
-  return {
-    get: async () => clone(data),
-    set: async d => { data=clone(d); emit(); },
-    update: async d => { data=merge(data, clone(d)); emit(); },
-    listen: cb => { ls.push(cb); setTimeout(()=>cb(clone(data),{fromCache:false})); return () => { ls=ls.filter(x=>x!==cb); }; }
-  };
-}
-/* Convidado: recebe o estado do anfitrião e manda as jogadas para ele */
-function guestStore(conn, first){
-  let data=first, ls=[];
-  conn.on("data", m => { if(m && m.type==="state"){ data=m.d; ls.forEach(f=>f(clone(data),{fromCache:false})); } });
-  conn.on("close", () => { S.ui.net = "Caiu a conexão com o anfitrião da sala. Saia e entre de novo com o mesmo código."; render(); });
-  return {
-    get: async () => clone(data),
-    set: async d => { conn.send({type:"patch", d}); },
-    update: async d => { if(!conn.open) throw new Error("closed"); conn.send({type:"patch", d}); },
-    listen: cb => { ls.push(cb); setTimeout(()=>cb(clone(data),{fromCache:false})); return () => { ls=ls.filter(x=>x!==cb); }; }
-  };
-}
-function openPeer(id){
-  return new Promise((res, rej) => {
-    if(!window.Peer) return rej({type:"no-lib"});
-    const p = id ? new Peer(id) : new Peer();
-    const t = setTimeout(()=>{ try{p.destroy();}catch(e){} rej({type:"timeout"}); }, 12000);
-    p.on("open", () => { clearTimeout(t); res(p); });
-    p.on("error", e => { clearTimeout(t); rej(e); });
-  });
-}
-function localStore(){
-  let data=null, ls=[];
-  const emit = () => ls.forEach(f => f(clone(data), {fromCache:false}));
-  return {
-    get: async () => clone(data),
-    set: async d => { data = clone(d); emit(); },
-    update: async d => { data = merge(data, clone(d)); emit(); },
-    listen: cb => { ls.push(cb); setTimeout(()=>cb(clone(data),{fromCache:false})); return () => { ls = ls.filter(x=>x!==cb); }; }
-  };
-}
-
 /* ---------- capabilities ---------- */
 (() => {
   let id = lsGet("ae_pid"); if(!id){ id = "p" + Math.random().toString(36).slice(2,10); lsSet("ae_pid", id); }
@@ -1253,31 +1203,82 @@ async function write(patch){
 }
 function newCode(){ const L="ABCDEFGHJKLMNPQRSTUVWXYZ"; let c=""; for(let i=0;i<4;i++) c+=L[Math.floor(Math.random()*L.length)]; return c; }
 
+/* ---------- conexão online (servidor público MQTT, funciona em 4G/5G/Wi-Fi) ---------- */
+const BROKERS = ["wss://broker.emqx.io:8084/mqtt", "wss://broker.hivemq.com:8884/mqtt"];
+const TOPIC = code => "alfabeto-embaralhado/v2/" + code;
+let mq = null;
+function connectBroker(){
+  return new Promise((res, rej) => {
+    if(!window.mqtt) return rej({type:"no-lib"});
+    let i = 0;
+    const tryNext = () => {
+      if(i >= BROKERS.length) return rej({type:"net"});
+      const url = BROKERS[i++];
+      const c = mqtt.connect(url, { clientId:"ae_"+Math.random().toString(36).slice(2,10), clean:true, connectTimeout:8000, reconnectPeriod:2000, keepalive:30 });
+      let done=false;
+      const t = setTimeout(()=>{ if(done) return; done=true; try{c.end(true);}catch(e){} tryNext(); }, 9000);
+      c.once("connect", () => { if(done) return; done=true; clearTimeout(t); res(c); });
+      c.once("error", () => { if(done) return; done=true; clearTimeout(t); try{c.end(true);}catch(e){} tryNext(); });
+    };
+    tryNext();
+  });
+}
+function readRetained(c, code, ms){
+  return new Promise(res => {
+    const topic = TOPIC(code) + "/state"; let got=null;
+    const h = (t, buf) => { if(t!==topic) return; try{ const m=JSON.parse(buf.toString()); if(m && m.d){ got=m.d; finish(); } }catch(e){} };
+    const finish = () => { clearTimeout(tm); c.removeListener("message", h); c.unsubscribe(topic); res(got); };
+    c.on("message", h); c.subscribe(topic, {qos:1});
+    const tm = setTimeout(finish, ms);
+  });
+}
+/* Anfitrião: guarda o estado da sala, recebe as jogadas e publica o estado para todos */
+function hostStore(c, code, initial){
+  let data=initial||null, ls=[];
+  const T=TOPIC(code);
+  const pub = () => c.publish(T+"/state", JSON.stringify({d:data, at:Date.now()}), {qos:1, retain:true});
+  const emit = () => { ls.forEach(f=>f(clone(data),{fromCache:false})); pub(); };
+  c.on("message", (t, buf) => { if(t!==T+"/patch" || !data) return; try{ const m=JSON.parse(buf.toString()); if(isObj(m.d)){ data=merge(data, m.d); emit(); } }catch(e){} });
+  c.subscribe(T+"/patch", {qos:1});
+  c.on("connect", () => { c.subscribe(T+"/patch", {qos:1}); if(data) pub(); });
+  return {
+    get: async () => clone(data),
+    set: async d => { data=clone(d); emit(); },
+    update: async d => { data=merge(data, clone(d)); emit(); },
+    listen: cb => { ls.push(cb); setTimeout(()=>cb(clone(data),{fromCache:false})); return () => { ls=ls.filter(x=>x!==cb); }; },
+    close: () => {}
+  };
+}
+/* Convidado: recebe o estado e manda as jogadas para o anfitrião */
+function guestStore(c, code, first){
+  let data=first, ls=[];
+  const T=TOPIC(code);
+  c.on("message", (t, buf) => { if(t!==T+"/state") return; try{ const m=JSON.parse(buf.toString()); if(m && m.d){ data=m.d; ls.forEach(f=>f(clone(data),{fromCache:false})); } }catch(e){} });
+  c.subscribe(T+"/state", {qos:1});
+  c.on("connect", () => c.subscribe(T+"/state", {qos:1}));
+  c.on("offline", () => { S.ui.net = "Sem internet no momento. Tentando reconectar…"; render(); });
+  c.on("connect", () => { if(S.ui.net){ S.ui.net=""; render(); } });
+  return {
+    get: async () => clone(data),
+    set: async d => { c.publish(T+"/patch", JSON.stringify({d}), {qos:1}); },
+    update: async d => { c.publish(T+"/patch", JSON.stringify({d}), {qos:1}); },
+    listen: cb => { ls.push(cb); setTimeout(()=>cb(clone(data),{fromCache:false})); return () => { ls=ls.filter(x=>x!==cb); }; }
+  };
+}
+function waitFor(pred, ms){ return new Promise(res => { const t0=Date.now(); const iv=setInterval(()=>{ if(pred()){ clearInterval(iv); res(true); } else if(Date.now()-t0>ms){ clearInterval(iv); res(false); } }, 150); }); }
 async function createRoom(){
   const name = S.ui.name.trim(); if(!name){ S.ui.err="Digite seu nome."; return render(); }
   lsSet("ae_name", name);
   S.mode="online"; S.ui.err="Criando a sala…"; render();
+  try{ mq = await connectBroker(); }catch(e){ S.ui.err="Não consegui conectar ao servidor do jogo. Verifique a internet e tente de novo."; return render(); }
   let code=null;
-  for(let i=0;i<4 && !peer;i++){
-    code=newCode();
-    try{ peer = await openPeer(PFX+code); }
-    catch(e){ if(e?.type!=="unavailable-id"){ S.ui.err="Não consegui criar a sala agora. Verifique a internet e tente de novo."; return render(); } }
-  }
-  if(!peer){ S.ui.err="Não consegui criar a sala agora."; return render(); }
-  peer.on("disconnected", () => { try{ peer.reconnect(); }catch(e){} });
-  store=hostStore(peer);
+  for(let i=0;i<4;i++){ const c=newCode(); const old=await readRetained(mq, c, 1200); if(!old || old.status==="done"){ code=c; break; } }
+  if(!code){ S.ui.err="Não consegui criar a sala agora. Tente de novo."; return render(); }
+  store=hostStore(mq, code, null);
   await store.set({ code, hostId:S.me, status:"lobby", createdAt:Date.now(), cardUses:2,
     players:{[S.me]:{name, joinedAt:Date.now()}}, order:[], turn:null, round:0, log:[], votes:{} });
+  lsSet("ae_last", code);
   S.code=code; S.ui.err=""; subscribe();
-}
-function connectTo(code){
-  return new Promise(async (res, rej) => {
-    try{ peer = await openPeer(null); }catch(e){ return rej({type:"net"}); }
-    const conn = peer.connect(PFX+code, {reliable:true});
-    const t = setTimeout(()=>rej({type:"timeout"}), 12000);
-    peer.on("error", e => { clearTimeout(t); rej(e); });
-    conn.on("data", function first(m){ if(m && m.type==="state"){ clearTimeout(t); conn.off("data", first); res({conn, room:m.d}); } });
-  });
 }
 async function joinRoom(){
   const name = S.ui.name.trim(); const code = S.ui.joinCode.trim().toUpperCase();
@@ -1285,22 +1286,24 @@ async function joinRoom(){
   if(code.length!==4){ S.ui.err="O código da sala tem 4 letras."; return render(); }
   lsSet("ae_name", name);
   S.mode="online"; S.ui.err="Procurando a sala…"; render();
-  let got;
-  try{ got = await connectTo(code); }
-  catch(e){
-    if(peer){ try{peer.destroy();}catch(x){} peer=null; }
-    S.ui.err = e?.type==="peer-unavailable" ? "Não encontrei a sala "+code+". Confira o código e se o anfitrião está com o jogo aberto."
-      : "Não consegui conectar na sala. Tente de novo ou use outra rede (Wi-Fi ou 4G).";
-    return render();
+  try{ mq = await connectBroker(); }catch(e){ S.ui.err="Não consegui conectar ao servidor do jogo. Verifique a internet e tente de novo."; return render(); }
+  const room = await readRetained(mq, code, 6000);
+  if(!room){ try{mq.end(true);}catch(e){} mq=null; S.ui.err="Não encontrei a sala "+code+". Confira o código com o anfitrião."; return render(); }
+  if(room.hostId===S.me){ /* o anfitrião voltou: retoma a sala de onde parou */
+    store=hostStore(mq, code, room); S.code=code; S.ui.err=""; subscribe(); return;
   }
-  const room = got.room;
-  store = guestStore(got.conn, room);
+  store = guestStore(mq, code, room);
   if(!room.players?.[S.me]){
-    if(room.status!=="lobby"){ S.ui.err="Essa partida já começou. Peça para o anfitrião começar outra."; try{peer.destroy();}catch(x){} peer=null; return render(); }
+    if(room.status!=="lobby"){ try{mq.end(true);}catch(e){} mq=null; S.ui.err="Essa partida já começou. Peça para o anfitrião começar outra."; return render(); }
     await store.update({players:{[S.me]:{name, joinedAt:Date.now()}}});
+    S.ui.err="Entrando…"; render();
+    let ok=false; const un=store.listen(d=>{ if(d?.players?.[S.me]) ok=true; });
+    const fine = await waitFor(()=>ok, 8000); un();
+    if(!fine){ try{mq.end(true);}catch(e){} mq=null; S.ui.err="O anfitrião não respondeu. Ele precisa estar com o jogo aberto na tela."; return render(); }
   }
   S.code=code; S.ui.err=""; subscribe();
 }
+
 function startLocal(){
   const names = S.ui.localNames; if(names.length<2){ S.ui.err="Adicione pelo menos 2 jogadores."; return render(); }
   S.mode="local"; store=localStore(); S.code=null;
@@ -1327,7 +1330,7 @@ async function rematch(){
   Object.keys(r.players).forEach(id => r.players[id] = {name:r.players[id].name, joinedAt:r.players[id].joinedAt});
   try{ await store.set(S.mode==="local" ? buildStart(r) : {...r, status:"lobby", order:[], turn:null, round:0, log:[], votes:{}}); }catch(e){ toast("Não deu para reiniciar."); }
 }
-function leave(){ if(peer){ try{peer.destroy();}catch(e){} peer=null; } if(unsub) unsub(); unsub=null; clearTimeout(netTimer); store=null; S.room=null; S.screen="home"; S.mode=null; S.view=null; S.ui.err=""; render(); }
+function leave(){ if(mq){ try{mq.end(true);}catch(e){} mq=null; } if(unsub) unsub(); unsub=null; clearTimeout(netTimer); store=null; S.room=null; S.screen="home"; S.mode=null; S.view=null; S.ui.err=""; render(); }
 
 /* ---------- turn logic ---------- */
 const actor = () => S.mode==="local" ? S.room.turn : S.me;
@@ -1436,7 +1439,7 @@ function rulesHTML(){
   </ol></div>`;
 }
 function vHome(){
-  const online = !!window.Peer;
+  const online = !!window.mqtt;
   return `<header class="hero"><h1>${titleHTML()}</h1>
     <p>Monte seu time com as letras que o quadro te der. Crie uma sala e passe o código para os amigos entrarem, cada um no seu celular.</p></header>
   <div class="home-grid">
