@@ -726,7 +726,7 @@ Luan|MEI
 Matheus Pereira|MEI
 Gustavo Scarpa/Scarpa|MEI
 Diego Maradona/Maradona|MEI
-Lionel Messi/Messi|MEI,PD,CA
+Lionel Messi/Messi/Leo Messi|MEI,PD,CA
 Zinédine Zidane/Zidane|MEI
 Michel Platini/Platini|MEI
 Johan Cruyff/Cruyff|MEI,CA
@@ -1134,6 +1134,15 @@ PDATA.split("\n").forEach((ln,i) => {
   e.norms = e.names.map(normName);
   PL.push(e); e.norms.forEach(n => { if(!PALIAS.has(n)) PALIAS.set(n, e); });
 });
+/* sobrenome sozinho vale como apelido, se só um jogador da lista tiver esse sobrenome */
+(() => {
+  const PART = new Set(["de","da","do","dos","das","di","van","von","der","den","del","la","le","el","jr","junior","filho","neto"]);
+  const cnt = new Map(), owner = new Map();
+  PL.forEach(e => new Set(e.names.map(n => { const w=normName(n).split(" "); return w.length>1 && !PART.has(w[w.length-2]) ? w[w.length-1] : null; }).filter(x => x && x.length>=3 && !PART.has(x))).forEach(sn => { cnt.set(sn,(cnt.get(sn)||0)+1); owner.set(sn,e); }));
+  cnt.forEach((c,sn) => { if(c!==1 || PALIAS.has(sn)) return; const e=owner.get(sn);
+    const orig = e.names.map(n=>n.split(" ")).find(w=>w.length>1 && normName(w[w.length-1])===sn);
+    const nm = orig ? orig[orig.length-1] : sn; e.names.push(nm); e.norms.push(sn); PALIAS.set(sn, e); });
+})();
 const lookup = name => PALIAS.get(normName(name)) || null;
 const playerKey = name => lookup(name)?.key || "x:" + normName(name);
 const fits = (e, slot) => !!e && e.pos.some(x => SLOT_OK[slot]?.includes(x));
@@ -1155,7 +1164,7 @@ function suggHTML(p){
   const pend=p.pending; if(!pend || !p.aim) return "";
   const list = suggestions(pend.letter, S.ui.draft, p.aim);
   if(!list.length) return `<p class="note" style="margin:0">${S.ui.draft ? "Nenhum jogador da lista com esse começo. Se ele existe, pode escalar assim mesmo." : "Nenhum jogador da lista com essa letra. Se você lembrar de algum, pode escalar assim mesmo."}</p>`;
-  return `<span class="lbl">Sugestões com ${esc(pend.letter)}</span><div class="sugg">${list.map(x=>`<button data-act="sugg" data-n="${esc(x.name)}" class="${x.fit?"fit":""}"><b>${esc(x.name)}</b><small>${esc(posText(x.e))}</small></button>`).join("")}</div>`;
+  return `<span class="lbl">Sugestões com ${esc(pend.letter)}</span><div class="sugg">${list.map(x=>`<button data-act="sugg" data-n="${esc(x.name)}" class="${x.fit?"fit":""}"><b>${esc(x.name)}</b><small>${x.name!==x.e.names[0]?esc(x.e.names[0])+" · ":""}${esc(posText(x.e))}</small></button>`).join("")}</div>`;
 }
 function fitHTML(p){
   const name=S.ui.draft.trim(); if(!name || !p.aim) return "";
@@ -1420,7 +1429,7 @@ function rulesHTML(){
   return `<div class="panel rules"><div class="lbl">Como funciona</div><ol>
     <li>Cada jogador tem um quadro com os números de 1 a 26. Atrás deles estão as 26 letras do alfabeto, embaralhadas de um jeito diferente para cada um.</li>
     <li>Na sua vez, <b>escolha primeiro a posição</b> no campo (4-3-3). Depois abra um número: a letra que sair é a inicial do jogador que vai nessa posição.</li>
-    <li>Digite o nome de um jogador de futebol com essa inicial e escale. Não vale repetir jogador: quem já foi escalado por alguém não pode entrar de novo. O jogo sugere nomes de uma lista com mais de 900 craques e avisa quando alguém vai jogar fora de posição.</li>
+    <li>Digite o nome de um jogador de futebol com essa inicial e escale. Não vale repetir jogador: quem já foi escalado por alguém não pode entrar de novo. Vale qualquer nome pelo qual o jogador é conhecido: o Messi entra com M (Messi) ou com L (Lionel ou Leo Messi). O jogo sugere nomes de uma lista com mais de 900 craques e avisa quando alguém vai jogar fora de posição.</li>
     <li>Seis números do quadro trazem, junto com a letra, uma <b>cartinha</b> (2 de cada tipo). Você pode usar na hora ou guardar para a próxima rodada.</li>
     <li><b>Repetir letra</b> deixa você usar uma letra que já usou no seu time. <b>Trocar letra</b> deixa você escolher qualquer letra para a posição. <b>Trocar número</b> descarta a letra que saiu e você sorteia outro número.</li>
     <li>Quando todo mundo completar os 11, os times são comparados posição por posição e cada um vota no melhor time (não vale votar no seu).</li>
