@@ -148,7 +148,7 @@ const POS = [
 const CARD_ICONS = {
   reroll:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/></svg>',
   letter:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18l4-11 4 11M4.5 14h5"/><path d="M14 10h7l-2-2M21 15h-7l2 2"/></svg>',
-  player:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="7" r="3"/><path d="M2 20c0-3.3 2.7-6 6-6"/><path d="M15 9l3-3 3 3M18 6v8M21 15l-3 3-3-3"/></svg>'
+  repeat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>'
 };
 
 const S = { screen:"home", mode:null, code:null, me:null, room:null, view:null,
@@ -239,7 +239,7 @@ function subscribe(){
     if(data.status==="lobby") S.screen="lobby";
     else if(data.status==="playing") S.screen="game";
     else if(data.status==="done") S.screen="done";
-    if(prevTurn !== data.turn){ S.ui.pickLetter=false; S.ui.draft=""; if(S.mode==="local") S.view=null; }
+    if(prevTurn !== data.turn){ S.ui.pick=null; S.ui.draft=""; if(S.mode==="local") S.view=null; }
     render();
   }, e => { S.ui.net = "A conexão com a sala caiu. Saia e entre de novo."; render(); });
 }
@@ -309,7 +309,7 @@ function buildStart(room){
   const ids = Object.keys(r.players).sort((a,b)=>(r.players[a].joinedAt||0)-(r.players[b].joinedAt||0));
   const order = shuffle(ids);
   ids.forEach(id => {
-    const board = shuffle([...shuffle(AL.split("")).slice(0,20), "#reroll","#reroll","#letter","#letter","#player","#player"]);
+    const board = shuffle([...shuffle(AL.split("")).slice(0,20), "#repeat","#repeat","#letter","#letter","#reroll","#reroll"]);
     r.players[id] = { name:r.players[id].name, joinedAt:r.players[id].joinedAt, board, revealed:[], team:{}, hand:[], aim:null, pending:null };
   });
   Object.assign(r, { status:"playing", order, turn:order[0], round:1, votes:{}, log:[{t:Date.now(), text:"Começou! "+r.players[order[0]].name+" abre a partida."}] });
@@ -334,7 +334,7 @@ function nextTurnPatch(players){
   }
   return { status:"done", turn:null };
 }
-const CARD_NAME = {reroll:"Sortear outra", letter:"Trocar letra", player:"Trocar jogador"};
+const CARD_NAME = {repeat:"Repetir letra", letter:"Trocar letra", reroll:"Trocar número"};
 const validCards = (p, r=S.room) => (p.hand||[]).filter(c => c.r + 1 >= r.round);
 const hasCard = (p, t) => validCards(p).some(c => c.t===t);
 function useCard(p, t){
@@ -344,7 +344,7 @@ function useCard(p, t){
 async function setAim(posId){
   const id=actor(), p=S.room.players[id];
   if(S.room.turn!==id || p.pending) return;
-  if(p.team[posId] && !hasCard(p,"player")){ toast("Para trocar um jogador já escalado, você precisa da cartinha Trocar jogador."); return; }
+  if(p.team[posId]) return;
   S.ui.draft="";
   await write({ players:{[id]:{ aim:posId }} });
 }
@@ -360,30 +360,38 @@ async function reveal(idx){
     await write({ players:{[id]:{ revealed, pending:{letter:v, idx} }}, log:logPatch(p.name+" abriu o nº "+(idx+1)+" e tirou a letra "+v) });
   }
 }
+const normName = s => (s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+function whoHas(name){
+  const n=normName(name);
+  for(const id of S.room.order){ const t=S.room.players[id].team||{}; for(const k in t){ if(normName(t[k].n)===n) return S.room.players[id].name; } }
+  return null;
+}
 async function place(){
   const id=actor(), p=S.room.players[id], pend=p.pending, posId=p.aim;
-  if(S.room.turn!==id || !pend || !posId) return;
+  if(S.room.turn!==id || !pend || !posId || p.team[posId]) return;
   const name=S.ui.draft.trim();
   if(!name){ toast("Digite o nome do jogador primeiro."); document.getElementById("draft")?.focus(); return; }
   if(firstLetter(name)!==pend.letter){ toast("O nome precisa começar com "+pend.letter+"."); return; }
-  const occupied=p.team[posId];
-  let hand = validCards(p);
-  if(occupied){ hand = useCard(p,"player"); if(!hand){ toast("Sua cartinha Trocar jogador venceu. Escolha uma posição vazia."); return; } }
+  const owner=whoHas(name);
+  if(owner){ toast(name+" já foi escalado"+(owner===p.name?" no seu time":" pelo "+owner)+". Escolha outro."); return; }
   const posLabel = POS.find(x=>x.id===posId).l;
   const players = clone(S.room.players); players[id] = {...p, team:{...p.team, [posId]:{n:name,l:pend.letter}}, pending:null, aim:null};
-  const text = occupied ? p.name+" usou Trocar jogador: saiu "+occupied.n+", entrou "+name+" ("+posLabel+")" : p.name+" escalou "+name+" ("+posLabel+")";
-  await write({ players:{[id]:{ team:{[posId]:{n:name,l:pend.letter}}, pending:null, aim:null, hand }}, log:logPatch(text), ...nextTurnPatch(players) });
+  await write({ players:{[id]:{ team:{[posId]:{n:name,l:pend.letter}}, pending:null, aim:null, hand:validCards(p) }}, log:logPatch(p.name+" escalou "+name+" ("+posLabel+")"), ...nextTurnPatch(players) });
 }
 async function cardReroll(){
   const id=actor(), p=S.room.players[id];
   if(!p.pending) return; const hand=useCard(p,"reroll"); if(!hand) return;
-  await write({ players:{[id]:{ pending:null, hand }}, log:logPatch(p.name+" usou Sortear outra e descartou a letra "+p.pending.letter) });
+  await write({ players:{[id]:{ pending:null, hand }}, log:logPatch(p.name+" usou Trocar número e descartou a letra "+p.pending.letter+". Abre outro número.") });
 }
-async function cardLetter(L){
+const pastLetters = p => [...new Set(p.revealed.map(i=>p.board[i]).filter(v=>!v.startsWith("#")))];
+async function cardPick(kind, L){
   const id=actor(), p=S.room.players[id];
-  if(!p.pending) return; const hand=useCard(p,"letter"); if(!hand) return;
-  S.ui.pickLetter=false;
-  await write({ players:{[id]:{ pending:{letter:L, idx:p.pending.idx, swapped:true}, hand }}, log:logPatch(p.name+" usou Trocar letra: "+p.pending.letter+" virou "+L) });
+  if(!p.aim) return;
+  if(kind==="repeat" && !pastLetters(p).includes(L)) return;
+  const hand=useCard(p, kind); if(!hand) return;
+  S.ui.pick=null;
+  const lab=POS.find(x=>x.id===p.aim).l;
+  await write({ players:{[id]:{ pending:{letter:L, idx:p.pending?p.pending.idx:-1, via:kind}, hand }}, log:logPatch(p.name+" usou "+CARD_NAME[kind]+" e ficou com a letra "+L+" para o "+lab) });
 }
 async function freeLetter(L){
   const id=actor(), p=S.room.players[id];
@@ -417,9 +425,9 @@ function rulesHTML(){
   return `<div class="panel rules"><div class="lbl">Como funciona</div><ol>
     <li>Cada jogador tem um quadro com os números de 1 a 26. Atrás deles estão 20 letras e 6 cartinhas, e cada quadro é embaralhado de um jeito.</li>
     <li>Na sua vez, <b>escolha primeiro a posição</b> no campo (4-3-3). Depois abra um número: a letra que sair é a inicial do jogador que vai nessa posição.</li>
-    <li>Digite o nome de um jogador de futebol com essa inicial e escale.</li>
+    <li>Digite o nome de um jogador de futebol com essa inicial e escale. Não vale repetir jogador: quem já foi escalado por alguém não pode entrar de novo.</li>
     <li>No meio dos números estão escondidas <b>6 cartinhas</b> (2 de cada). Achou uma, ela vai para a sua mão e você abre outro número. A cartinha vale nesta rodada e na próxima.</li>
-    <li><b>Sortear outra</b> descarta a letra e você abre outro número. <b>Trocar letra</b> deixa você escolher a letra. <b>Trocar jogador</b> deixa você escolher uma posição já ocupada para substituir quem está nela.</li>
+    <li><b>Repetir letra</b> deixa você usar uma letra que já saiu para você. <b>Trocar letra</b> deixa você escolher qualquer letra para a posição. <b>Trocar número</b> descarta a letra que saiu e você sorteia outro número.</li>
     <li>Quando todo mundo completar os 11, os times aparecem lado a lado e cada um vota no melhor time (não vale votar no seu).</li>
   </ol></div>`;
 }
@@ -472,11 +480,11 @@ function vLobby(){
 }
 function pitchHTML(p, opts={}){
   const {interactive=false, mini=false} = opts;
-  const pend = p.pending, swap = interactive && hasCard(p,"player");
+  const pend = p.pending;
   return `<div class="pitch ${mini?"mini":""}"><div class="ln half"></div><div class="ln circ"></div><div class="ln boxT"></div><div class="ln boxB"></div>
     ${POS.map(pos=>{
       const t=p.team?.[pos.id], aimed = interactive && p.aim===pos.id;
-      const can = interactive && !pend && (!t || swap);
+      const can = interactive && !pend && !t;
       return `<button class="slot ${t?"full":""} ${can?"can":""} ${aimed?"aim":""}" ${can?`data-act="aim" data-pos="${pos.id}"`:"disabled"} style="left:${pos.x}%;top:${pos.y}%" aria-pressed="${aimed?"true":"false"}" aria-label="${pos.l}${t?": "+esc(t.n):" vazia"}">
         ${t?`<span class="lt">${esc(t.l)}</span>`:""}<span class="pos">${pos.l}</span>${t?`<span class="nm">${esc(t.n)}</span>`:""}${aimed && pend?`<span class="nm">${esc(pend.letter)}…</span>`:""}</button>`;
     }).join("")}</div>`;
@@ -491,23 +499,26 @@ function boardHTML(p, mine){
   }).join("")}</div>`;
 }
 function handHTML(p, mine){
-  const hand = validCards(p), r=S.room;
+  const hand = validCards(p), r=S.room, pend=p.pending;
+  let picker="";
+  if(mine && S.ui.pick){
+    const opts = S.ui.pick==="repeat" ? pastLetters(p) : AL.split("");
+    picker = `<div class="stack" style="gap:6px"><span class="lbl">${S.ui.pick==="repeat"?"Escolha uma letra que já saiu para você":"Escolha qualquer letra"}</span>${opts.length?`<div class="letters">${opts.map(X=>`<button data-act="pickL" data-l="${X}">${X}</button>`).join("")}</div>`:'<p class="note" style="margin:0">Ainda não saiu nenhuma letra para você.</p>'}</div>`;
+  }
   if(!hand.length) return `<div class="stack" style="gap:6px"><span class="lbl">Suas cartinhas</span><p class="note" style="margin:0">Nenhuma. Tem 6 escondidas no quadro: 2 de cada.</p></div>`;
-  const pend=p.pending;
   return `<div class="stack" style="gap:8px"><span class="lbl">Suas cartinhas</span><div class="cards">${hand.map(c=>{
-    const usable = mine && ((c.t==="reroll"||c.t==="letter") ? !!pend : false);
-    const act = c.t==="reroll" ? "cReroll" : c.t==="letter" ? "cLetter" : "";
+    const usable = mine && !!p.aim && (c.t==="reroll" ? !!pend : (c.t==="repeat" ? pastLetters(p).length>0 : true));
+    const act = c.t==="reroll" ? "cReroll" : "cPick";
     const exp = c.r + 1 > r.round ? "vale até a próxima rodada" : "última rodada!";
-    return `<button class="card" ${usable?`data-act="${act}"`:"disabled"} aria-pressed="${c.t==="letter"&&S.ui.pickLetter?"true":"false"}">${CARD_ICONS[c.t]}<b>${CARD_NAME[c.t]}</b><small>${exp}</small></button>`;
-  }).join("")}</div>
-  ${hasCard(p,"player") && mine && !pend ? '<p class="note" style="margin:0">Com Trocar jogador, você pode escolher uma posição já ocupada para substituir quem está nela.</p>' : ""}</div>`;
+    return `<button class="card" ${usable?`data-act="${act}" data-k="${c.t}"`:"disabled"} aria-pressed="${S.ui.pick===c.t?"true":"false"}">${CARD_ICONS[c.t]}<b>${CARD_NAME[c.t]}</b><small>${exp}</small></button>`;
+  }).join("")}</div>${picker}</div>`;
 }
 function actionHTML(p){
   if(!p.pending){
     if(!p.aim) return `<div class="panel stack"><h3 style="font-size:24px">1. Escolha a posição no campo</h3><p class="note" style="margin:0">Toque numa posição vazia. Depois você abre um número e escala alguém com a letra que sair.</p>${handHTML(p,true)}</div>`;
     const lab = POS.find(x=>x.id===p.aim).l;
     if(p.revealed.length>=26) return `<div class="panel stack"><div class="lbl">O quadro acabou. Escolha uma letra para ${lab}</div><div class="letters">${AL.split("").map(L=>`<button data-act="free" data-l="${L}">${L}</button>`).join("")}</div></div>`;
-    return `<div class="panel stack"><h3 style="font-size:24px">2. Abra um número para ${lab}</h3><p class="note" style="margin:0">${p.team[p.aim] ? "Você vai substituir "+esc(p.team[p.aim].n)+" usando Trocar jogador." : "Ainda dá para mudar a posição tocando em outra no campo."}</p>${handHTML(p,true)}</div>`;
+    return `<div class="panel stack"><h3 style="font-size:24px">2. Abra um número para ${lab}</h3><p class="note" style="margin:0">Ainda dá para mudar a posição tocando em outra no campo.</p>${handHTML(p,true)}</div>`;
   }
   const L=p.pending.letter, lab=POS.find(x=>x.id===p.aim)?.l||"";
   return `<div class="panel action">
@@ -515,7 +526,6 @@ function actionHTML(p){
       <div class="stack" style="gap:6px;flex:1;min-width:0"><label class="lbl" for="draft">${lab} com a letra ${L}</label>
       <input id="draft" maxlength="28" placeholder="Nome começando com ${L}" value="${esc(S.ui.draft)}" autocomplete="off"></div></div>
     <button class="btn gold" data-act="place">Escalar no ${lab}</button>
-    ${S.ui.pickLetter ? `<div class="stack" style="gap:6px"><span class="lbl">Escolha a nova letra</span><div class="letters">${AL.split("").map(X=>`<button data-act="pickL" data-l="${X}">${X}</button>`).join("")}</div></div>` : ""}
     ${handHTML(p,true)}
     <button class="btn ghost" data-act="pass">Passar a vez (perde a letra)</button>
   </div>`;
@@ -590,8 +600,8 @@ async function act(a, d={}){
       case "place": return place();
       case "aim": return setAim(d.pos);
       case "cReroll": return cardReroll();
-      case "cLetter": S.ui.pickLetter=!S.ui.pickLetter; return render();
-      case "pickL": return cardLetter(d.l);
+      case "cPick": S.ui.pick = S.ui.pick===d.k ? null : d.k; return render();
+      case "pickL": return cardPick(S.ui.pick, d.l);
       case "free": return freeLetter(d.l);
       case "pass": return pass();
       case "skip": return skipTurn();
