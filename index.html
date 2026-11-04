@@ -115,6 +115,13 @@ input::placeholder{color:#6f8a79}
 .slot:disabled{cursor:default}
 .slot.off{border-color:var(--gold);border-style:dashed}
 .slot.off .pos{color:var(--gold)}
+.cmpwrap{overflow-x:auto}
+.cmp{border-collapse:collapse;width:100%;font-size:14px;min-width:420px}
+.cmp th,.cmp td{text-align:left;padding:8px 10px;border-bottom:1px solid #223a2e;vertical-align:top}
+.cmp thead th{font-family:var(--f-label);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-size:12px}
+.cmp tbody th{font-family:var(--f-label);color:var(--muted);font-weight:700;width:60px}
+.cmp td.offp{color:var(--gold)}
+.cmp td small{font-size:11px}
 .sugg{display:flex;flex-wrap:wrap;gap:6px}
 .sugg button{border:1px solid #2c4a3a;background:var(--panel2);border-radius:9px;padding:6px 10px;text-align:left;display:flex;flex-direction:column;line-height:1.15;max-width:100%}
 .sugg button b{font-weight:700;font-size:14px}
@@ -123,6 +130,9 @@ input::placeholder{color:#6f8a79}
 .fit{display:block;font-size:13.5px;font-weight:600}
 .fit.ok{color:var(--ok)} .fit.off{color:var(--gold)} .fit.unk{color:var(--muted)}
 .slot.aim{border-color:var(--flag);border-style:solid;background:rgba(255,106,61,.35);box-shadow:0 0 0 3px rgba(255,106,61,.35)}
+.tile{position:relative}
+.cbadge{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:6px;background:linear-gradient(170deg,var(--gold-hi),var(--gold));color:var(--ink);display:grid;place-items:center;border:1px solid var(--gold-deep)}
+.cbadge svg{width:14px;height:14px}
 .tile.cardtile{background:linear-gradient(170deg,var(--gold-hi),var(--gold));color:var(--ink);border-color:var(--gold-deep)}
 .tile svg{width:60%;height:60%}
 .card small{font-size:11px;font-weight:600;opacity:.8}
@@ -1294,8 +1304,10 @@ function buildStart(room){
   const ids = Object.keys(r.players).sort((a,b)=>(r.players[a].joinedAt||0)-(r.players[b].joinedAt||0));
   const order = shuffle(ids);
   ids.forEach(id => {
-    const board = shuffle([...shuffle(AL.split("")).slice(0,20), "#repeat","#repeat","#letter","#letter","#reroll","#reroll"]);
-    r.players[id] = { name:r.players[id].name, joinedAt:r.players[id].joinedAt, board, revealed:[], team:{}, hand:[], aim:null, pending:null };
+    const board = shuffle(AL.split(""));
+    const cards = Array(26).fill(""), types = shuffle(["repeat","repeat","letter","letter","reroll","reroll"]);
+    shuffle([...Array(26).keys()]).slice(0,6).forEach((i,k) => cards[i] = types[k]);
+    r.players[id] = { name:r.players[id].name, joinedAt:r.players[id].joinedAt, board, cards, revealed:[], team:{}, hand:[], aim:null, pending:null };
   });
   Object.assign(r, { status:"playing", order, turn:order[0], round:1, votes:{}, log:[{t:Date.now(), text:"Começou! "+r.players[order[0]].name+" abre a partida."}] });
   return r;
@@ -1337,13 +1349,10 @@ async function reveal(idx){
   const id=actor(), p=S.room.players[id];
   if(S.room.turn!==id || p.pending || p.revealed.includes(idx)) return;
   if(!p.aim){ toast("Escolha primeiro a posição no campo."); return; }
-  const v=p.board[idx], revealed=[...p.revealed, idx];
-  if(v.startsWith("#")){
-    const t=v.slice(1);
-    await write({ players:{[id]:{ revealed, hand:[...validCards(p), {t, r:S.room.round}] }}, log:logPatch(p.name+" abriu o nº "+(idx+1)+" e achou a cartinha "+CARD_NAME[t]+"! Abre outro número.") });
-  } else {
-    await write({ players:{[id]:{ revealed, pending:{letter:v, idx} }}, log:logPatch(p.name+" abriu o nº "+(idx+1)+" e tirou a letra "+v) });
-  }
+  const L=p.board[idx], c=(p.cards||[])[idx], revealed=[...p.revealed, idx];
+  const patch = { revealed, pending:{letter:L, idx} };
+  if(c) patch.hand = [...validCards(p), {t:c, r:S.room.round}];
+  await write({ players:{[id]:patch}, log:logPatch(p.name+" abriu o nº "+(idx+1)+" e tirou a letra "+L+(c?" e a cartinha "+CARD_NAME[c]+"!":"")) });
 }
 function whoHas(name){
   const k=playerKey(name);
@@ -1369,7 +1378,7 @@ async function cardReroll(){
   if(!p.pending) return; const hand=useCard(p,"reroll"); if(!hand) return;
   await write({ players:{[id]:{ pending:null, hand }}, log:logPatch(p.name+" usou Trocar número e descartou a letra "+p.pending.letter+". Abre outro número.") });
 }
-const pastLetters = p => [...new Set(p.revealed.map(i=>p.board[i]).filter(v=>!v.startsWith("#")))];
+const pastLetters = p => [...new Set(Object.values(p.team||{}).map(t=>t.l))].sort();
 async function cardPick(kind, L){
   const id=actor(), p=S.room.players[id];
   if(!p.aim) return;
@@ -1409,12 +1418,12 @@ function titleHTML(){
 }
 function rulesHTML(){
   return `<div class="panel rules"><div class="lbl">Como funciona</div><ol>
-    <li>Cada jogador tem um quadro com os números de 1 a 26. Atrás deles estão 20 letras e 6 cartinhas, e cada quadro é embaralhado de um jeito.</li>
+    <li>Cada jogador tem um quadro com os números de 1 a 26. Atrás deles estão as 26 letras do alfabeto, embaralhadas de um jeito diferente para cada um.</li>
     <li>Na sua vez, <b>escolha primeiro a posição</b> no campo (4-3-3). Depois abra um número: a letra que sair é a inicial do jogador que vai nessa posição.</li>
     <li>Digite o nome de um jogador de futebol com essa inicial e escale. Não vale repetir jogador: quem já foi escalado por alguém não pode entrar de novo. O jogo sugere nomes de uma lista com mais de 900 craques e avisa quando alguém vai jogar fora de posição.</li>
-    <li>No meio dos números estão escondidas <b>6 cartinhas</b> (2 de cada). Achou uma, ela vai para a sua mão e você abre outro número. A cartinha vale nesta rodada e na próxima.</li>
-    <li><b>Repetir letra</b> deixa você usar uma letra que já saiu para você. <b>Trocar letra</b> deixa você escolher qualquer letra para a posição. <b>Trocar número</b> descarta a letra que saiu e você sorteia outro número.</li>
-    <li>Quando todo mundo completar os 11, os times aparecem lado a lado e cada um vota no melhor time (não vale votar no seu).</li>
+    <li>Seis números do quadro trazem, junto com a letra, uma <b>cartinha</b> (2 de cada tipo). Você pode usar na hora ou guardar para a próxima rodada.</li>
+    <li><b>Repetir letra</b> deixa você usar uma letra que já usou no seu time. <b>Trocar letra</b> deixa você escolher qualquer letra para a posição. <b>Trocar número</b> descarta a letra que saiu e você sorteia outro número.</li>
+    <li>Quando todo mundo completar os 11, os times são comparados posição por posição e cada um vota no melhor time (não vale votar no seu).</li>
   </ol></div>`;
 }
 function vHome(){
@@ -1478,10 +1487,10 @@ function pitchHTML(p, opts={}){
 function boardHTML(p, mine){
   const pend=p.pending;
   return `<div class="board">${p.board.map((v,i)=>{
-    const open=p.revealed.includes(i), cur=pend && pend.idx===i, card=v.startsWith("#");
+    const open=p.revealed.includes(i), cur=pend && pend.idx===i, c=open && (p.cards||[])[i];
     const can = mine && !pend && !open && !!p.aim;
-    const label = open ? (card ? "Cartinha "+CARD_NAME[v.slice(1)] : "Letra "+v) : "Número "+(i+1);
-    return `<button class="tile ${open?"open":""} ${cur?"cur":""} ${open&&card?"cardtile":""}" ${can?`data-act="reveal" data-i="${i}"`:"disabled"} aria-label="${label}" title="${label}">${open ? (card ? CARD_ICONS[v.slice(1)] : v) : i+1}</button>`;
+    const label = open ? "Letra "+v+(c?" com a cartinha "+CARD_NAME[c]:"") : "Número "+(i+1);
+    return `<button class="tile ${open?"open":""} ${cur?"cur":""}" ${can?`data-act="reveal" data-i="${i}"`:"disabled"} aria-label="${label}" title="${label}">${open ? v : i+1}${c?`<span class="cbadge">${CARD_ICONS[c]}</span>`:""}</button>`;
   }).join("")}</div>`;
 }
 function handHTML(p, mine){
@@ -1489,9 +1498,9 @@ function handHTML(p, mine){
   let picker="";
   if(mine && S.ui.pick){
     const opts = S.ui.pick==="repeat" ? pastLetters(p) : AL.split("");
-    picker = `<div class="stack" style="gap:6px"><span class="lbl">${S.ui.pick==="repeat"?"Escolha uma letra que já saiu para você":"Escolha qualquer letra"}</span>${opts.length?`<div class="letters">${opts.map(X=>`<button data-act="pickL" data-l="${X}">${X}</button>`).join("")}</div>`:'<p class="note" style="margin:0">Ainda não saiu nenhuma letra para você.</p>'}</div>`;
+    picker = `<div class="stack" style="gap:6px"><span class="lbl">${S.ui.pick==="repeat"?"Escolha uma letra que você já usou no seu time":"Escolha qualquer letra"}</span>${opts.length?`<div class="letters">${opts.map(X=>`<button data-act="pickL" data-l="${X}">${X}</button>`).join("")}</div>`:'<p class="note" style="margin:0">Você ainda não escalou ninguém, então não tem letra para repetir.</p>'}</div>`;
   }
-  if(!hand.length) return `<div class="stack" style="gap:6px"><span class="lbl">Suas cartinhas</span><p class="note" style="margin:0">Nenhuma. Tem 6 escondidas no quadro: 2 de cada.</p></div>`;
+  if(!hand.length) return `<div class="stack" style="gap:6px"><span class="lbl">Suas cartinhas</span><p class="note" style="margin:0">Nenhuma ainda. Seis números do seu quadro trazem uma cartinha junto com a letra.</p></div>`;
   return `<div class="stack" style="gap:8px"><span class="lbl">Suas cartinhas</span><div class="cards">${hand.map(c=>{
     const usable = mine && !!p.aim && (c.t==="reroll" ? !!pend : (c.t==="repeat" ? pastLetters(p).length>0 : true));
     const act = c.t==="reroll" ? "cReroll" : "cPick";
@@ -1551,6 +1560,7 @@ function vDone(){
   <div class="teams">${r.order.map(id=>{const p=r.players[id];return `<div class="panel team stack"><div class="row" style="justify-content:space-between"><div><h3>${esc(p.name)}</h3><span class="note">${Object.values(p.team||{}).filter(t=>t.ok!==false).length} de 11 na posição</span></div>${online?`<span class="votes">${tally[id]||0} voto${(tally[id]||0)===1?"":"s"}</span>`:""}</div>
     ${pitchHTML(p,{mini:true})}
     ${online && id!==S.me ? `<button class="btn ${myVote===id?"gold":""}" data-act="vote" data-id="${id}">${myVote===id?"Seu voto":"Votar neste time"}</button>`:""}</div>`;}).join("")}</div>
+  <div class="panel stack" style="margin-top:16px"><span class="lbl">Posição por posição</span><div class="cmpwrap"><table class="cmp"><thead><tr><th>Posição</th>${r.order.map(id=>`<th>${esc(r.players[id].name)}</th>`).join("")}</tr></thead><tbody>${["gol","ld","zg1","zg2","le","vol","mc1","mc2","pd","pe","ca"].map(k=>{const pos=POS.find(x=>x.id===k);return `<tr><th>${pos.l}</th>${r.order.map(id=>{const t=r.players[id].team?.[k];return `<td class="${t&&t.ok===false?"offp":""}">${t?esc(t.n):"—"}${t&&t.ok===false?" <small>fora</small>":""}</td>`;}).join("")}</tr>`;}).join("")}</tbody></table></div></div>
   ${host ? `<div class="row" style="margin-top:16px"><button class="btn gold" data-act="rematch">Jogar de novo</button></div>` : ""}`;
 }
 
