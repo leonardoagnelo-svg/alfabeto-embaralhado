@@ -122,6 +122,12 @@ input::placeholder{color:#6f8a79}
 .cmp tbody th{font-family:var(--f-label);color:var(--muted);font-weight:700;width:60px}
 .cmp td.offp{color:var(--gold)}
 .cmp td small{font-size:11px}
+.ov{position:absolute;bottom:-8px;left:-6px;font-family:var(--f-display);font-size:12px;border-radius:5px;padding:0 4px;color:var(--ink)}
+.t1{background:#f3d27a;color:#2a1d02}.t2{background:#cfd8d2;color:#13241b}.t3{background:#c08a5a;color:#1d1208}.t4{background:#6f8a79;color:#0c1712}
+.ovrb{font-family:var(--f-display);font-weight:400;font-size:12px;border-radius:4px;padding:0 4px;margin-right:2px;display:inline-block}
+.teamovr{font-family:var(--f-display);font-size:30px;line-height:1;border-radius:10px;padding:6px 10px;text-align:center;display:flex;flex-direction:column}
+.teamovr small{font-family:var(--f-label);font-size:10px;letter-spacing:.1em}
+.cmp td.win{background:rgba(95,211,141,.12);font-weight:700}
 .sugg{display:flex;flex-wrap:wrap;gap:6px}
 .sugg button{border:1px solid #2c4a3a;background:var(--panel2);border-radius:9px;padding:6px 10px;text-align:left;display:flex;flex-direction:column;line-height:1.15;max-width:100%}
 .sugg button b{font-weight:700;font-size:14px}
@@ -189,947 +195,947 @@ S.ui.name = lsGet("ae_name") || "";
 
 
 /* ---------- lista de jogadores ---------- */
-const PDATA = `Taffarel|GOL
-Marcos|GOL
-Rogério Ceni|GOL
-Dida|GOL
-Júlio César|GOL
-Alisson|GOL
-Ederson|GOL
-Gilmar|GOL
-Leão|GOL
-Zetti|GOL
-Cássio|GOL
-Fábio|GOL
-Weverton|GOL
-Victor|GOL
-Bento|GOL
-Hugo Souza|GOL
-John|GOL
-Rossi|GOL
-Gatito Fernández|GOL
-Everson|GOL
-Marcelo Grohe|GOL
-Diego Alves|GOL
-Jefferson|GOL
-Doni|GOL
-Raul Plassmann|GOL
-Zé Carlos|GOL
-Castilho|GOL
-Barbosa|GOL
-Manga|GOL
-Félix|GOL
-Waldir Peres|GOL
-Carlos|GOL
-Velloso|GOL
-Danrlei|GOL
-Clemer|GOL
-Fernando Prass|GOL
-Neto|GOL,MEI
-Gianluigi Buffon/Buffon|GOL
-Iker Casillas/Casillas|GOL
-Manuel Neuer/Neuer|GOL
-Oliver Kahn/Kahn|GOL
-Peter Schmeichel|GOL
-Kasper Schmeichel|GOL
-Edwin van der Sar/Van der Sar|GOL
-Petr Čech/Čech|GOL
-Lev Yashin/Yashin|GOL
-Dino Zoff/Zoff|GOL
-Gordon Banks/Banks|GOL
-Sepp Maier|GOL
-René Higuita/Higuita|GOL
-José Luis Chilavert/Chilavert|GOL
-Thibaut Courtois/Courtois|GOL
-Jan Oblak/Oblak|GOL
-Marc-André ter Stegen/Ter Stegen|GOL
-David de Gea/De Gea|GOL
-Keylor Navas|GOL
-Hugo Lloris/Lloris|GOL
-Fabien Barthez/Barthez|GOL
-Víctor Valdés/Valdés|GOL
-Pepe Reina/Reina|GOL
-Gianluigi Donnarumma/Donnarumma|GOL
-Emiliano Martínez/Dibu Martínez|GOL
-Guillermo Ochoa/Ochoa|GOL
-Wojciech Szczęsny/Szczęsny|GOL
-Samir Handanović/Handanović|GOL
-André Onana/Onana|GOL
-Édouard Mendy|GOL
-Yassine Bounou/Bounou|GOL
-Jordan Pickford/Pickford|GOL
-David Seaman/Seaman|GOL
-Peter Shilton/Shilton|GOL
-Andoni Zubizarreta/Zubizarreta|GOL
-Francesco Toldo/Toldo|GOL
-Gianluca Pagliuca/Pagliuca|GOL
-Angelo Peruzzi/Peruzzi|GOL
-Jens Lehmann/Lehmann|GOL
-Jerzy Dudek/Dudek|GOL
-Vítor Baía|GOL
-Unai Simón|GOL
-David Raya/Raya|GOL
-Guglielmo Vicario/Vicario|GOL
-Yann Sommer/Sommer|GOL
-Mike Maignan/Maignan|GOL
-Kepa Arrizabalaga/Kepa|GOL
-David Ospina/Ospina|GOL
-Fernando Muslera/Muslera|GOL
-Sergio Goycochea/Goycochea|GOL
-Franco Armani/Armani|GOL
-Ubaldo Fillol/Fillol|GOL
-Carlos Roa|GOL
-Óscar Córdoba|GOL
-Walter Zenga/Zenga|GOL
-Jorge Campos|GOL
-Tim Howard/Howard|GOL
-Brad Friedel/Friedel|GOL
-Mark Schwarzer/Schwarzer|GOL
-Igor Akinfeev/Akinfeev|GOL
-Rinat Dasayev/Dasayev|GOL
-Thomas Ravelli/Ravelli|GOL
-Michel Preud'homme/Preud'homme|GOL
-Ricardo Zamora/Zamora|GOL
-Bodo Illgner/Illgner|GOL
-Toni Schumacher/Schumacher|GOL
-Rui Patrício|GOL
-Diogo Costa|GOL
-Andriy Lunin/Lunin|GOL
-Gregor Kobel/Kobel|GOL
-Alex Meret/Meret|GOL
-Mattia Perin/Perin|GOL
-Willy Caballero|GOL
-Sergio Romero|GOL
-Nahuel Guzmán|GOL
-Agustín Rossi|GOL
-Cafu|LD
-Carlos Alberto Torres/Carlos Alberto|LD
-Djalma Santos|LD
-Jorginho|LD,VOL
-Leandro|LD
-Josimar|LD
-Juliano Belletti/Belletti|LD
-Maicon|LD
-Daniel Alves/Dani Alves|LD
-Danilo|LD
-Fagner|LD
-Mancini|LD
-Cicinho|LD
-Rafinha|LD
-Marcos Rocha|LD
-Mayke|LD
-Zé Maria|LD
-Nelinho|LD
-Léo Moura|LD
-Vanderson|LD
-Emerson Royal|LD
-Yan Couto|LD
-Arboleda|LD
-Odair|LD
-Paulo Roberto|LD
-Philipp Lahm/Lahm|LD
-Javier Zanetti/Zanetti|LD
-Lilian Thuram/Thuram|LD
-Gary Neville|LD
-Dani Carvajal/Carvajal|LD
-Míchel Salgado/Salgado|LD
-Héctor Bellerín/Bellerín|LD
-Trent Alexander-Arnold/Alexander-Arnold/Trent|LD
-Kyle Walker/Walker|LD
-Achraf Hakimi/Hakimi|LD
-João Cancelo/Cancelo|LD
-Joshua Kimmich/Kimmich|LD
-Benjamin Pavard/Pavard|LD
-Jules Koundé/Koundé|LD
-César Azpilicueta/Azpilicueta|LD
-Stephan Lichtsteiner/Lichtsteiner|LD
-Sergi Roberto|LD
-Pablo Zabaleta/Zabaleta|LD
-Bacary Sagna/Sagna|LD
-Branislav Ivanović/Ivanović|LD
-Reece James|LD
-Kieran Trippier/Trippier|LD
-Jesús Navas|LD,PD
-Álvaro Odriozola/Odriozola|LD
-Gianluca Zambrotta/Zambrotta|LD
-Christian Panucci/Panucci|LD
-Mauro Tassotti/Tassotti|LD
-Giuseppe Bergomi/Bergomi|LD
-Glen Johnson|LD
-Jeremie Frimpong/Frimpong|LD
-Denzel Dumfries/Dumfries|LD
-Giovanni Di Lorenzo/Di Lorenzo|LD
-Nahuel Molina|LD
-Gonzalo Montiel/Montiel|LD
-Juan Cuadrado/Cuadrado|LD,PD
-Antonio Valencia|LD,PD
-DeAndre Yedlin/Yedlin|LD
-Pedro Porro/Porro|LD
-Diogo Dalot/Dalot|LD
-Nélson Semedo/Semedo|LD
-Sergiño Dest/Dest|LD
-Paulo Ferreira|LD
-Berti Vogts/Vogts|LD
-Manfred Kaltz/Kaltz|LD
-Ashley Young|LD
-Roberto Carlos|LE
-Nilton Santos|LE
-Júnior/Leovegildo Júnior|LE,MC
-Branco|LE
-Marcelo|LE
-Serginho|LE
-Kléber|LE
-Filipe Luís|LE
-Alex Sandro|LE
-Guilherme Arana/Arana|LE
-Renan Lodi/Lodi|LE
-Alex Telles/Telles|LE
-Reinaldo|LE,CA
-Michel Bastos|LE
-Zé Roberto|LE,MC
-Silvinho|LE
-Gilberto|LE
-Wendell|LE
-Juan Pablo Sorín/Sorín|LE
-Everaldo|LE
-Wladimir|LE
-Marco Antônio|LE
-Athirson|LE
-Marcos Alonso|LE
-Jordi Alba/Alba|LE
-Paolo Maldini/Maldini|LE
-Bixente Lizarazu/Lizarazu|LE
-Ashley Cole|LE
-Patrice Evra/Evra|LE
-Andreas Brehme/Brehme|LE
-Giacinto Facchetti/Facchetti|LE
-Éric Abidal/Abidal|LE
-Andrew Robertson/Robertson|LE
-Alphonso Davies/Davies|LE
-Theo Hernández/Theo|LE
-Lucas Hernández|LE
-Alejandro Grimaldo/Grimaldo|LE
-Ferland Mendy|LE
-Luke Shaw/Shaw|LE
-Nicolás Tagliafico/Tagliafico|LE
-Marcos Acuña/Acuña|LE
-Gaël Clichy/Clichy|LE
-Aleksandar Kolarov/Kolarov|LE
-Leighton Baines/Baines|LE
-Stuart Pearce/Pearce|LE
-Joan Capdevila/Capdevila|LE
-Fabio Grosso/Grosso|LE
-Antonio Cabrini/Cabrini|LE
-David Alaba/Alaba|LE
-Nuno Mendes|LE
-Raphaël Guerreiro/Guerreiro|LE
-Destiny Udogie/Udogie|LE
-Federico Dimarco/Dimarco|LE
-Ben Chilwell/Chilwell|LE
-Oleksandr Zinchenko/Zinchenko|LE
-Kieran Tierney/Tierney|LE
-Sergio Reguilón/Reguilón|LE
-Juan Bernat/Bernat|LE
-Ricardo Rodríguez|LE
-Yuto Nagatomo/Nagatomo|LE
-Matías Viña/Viña|LE
-Piero Hincapié/Hincapié|LE
-Pervis Estupiñán/Estupiñán|LE
-Josko Gvardiol/Gvardiol|LE
-Hans-Peter Briegel/Briegel|LE
-Lúcio|ZAG
-Juan|ZAG
-Thiago Silva|ZAG
-Marquinhos|ZAG
-Aldair|ZAG
-Mauro Galvão|ZAG
-Márcio Santos|ZAG
-Ricardo Gomes|ZAG
-Oscar|ZAG,MEI
-Luisão|ZAG
-David Luiz|ZAG
-Miranda|ZAG
-Éder Militão/Militão|ZAG
-Gabriel Magalhães|ZAG
-Gleison Bremer/Bremer|ZAG
-Dedé|ZAG
-Gil|ZAG
-Réver|ZAG
-Edu Dracena|ZAG
-Gustavo Gómez|ZAG
-Felipe Melo|ZAG,VOL
-Júnior Baiano|ZAG
-Antônio Carlos|ZAG
-Mozer|ZAG
-Bellini|ZAG
-Mauro Ramos|ZAG
-Brito|ZAG
-Piazza|ZAG
-Alex|ZAG,MEI
-Jemerson|ZAG
-Léo Ortiz|ZAG
-Murilo|ZAG
-Rodrigo Caio|ZAG
-Domingos da Guia|ZAG
-Luís Pereira|ZAG
-Amaral|ZAG
-Edinho|ZAG
-Franz Beckenbauer/Beckenbauer|ZAG
-Franco Baresi/Baresi|ZAG
-Fabio Cannavaro/Cannavaro|ZAG
-Alessandro Nesta/Nesta|ZAG
-Carles Puyol/Puyol|ZAG
-Gerard Piqué/Piqué|ZAG
-Sergio Ramos|ZAG
-Pepe|ZAG,PE
-Virgil van Dijk/Van Dijk|ZAG
-Rio Ferdinand/Ferdinand|ZAG
-Nemanja Vidić/Vidić|ZAG
-John Terry/Terry|ZAG
-Mats Hummels/Hummels|ZAG
-Jérôme Boateng/Boateng|ZAG
-Raphaël Varane/Varane|ZAG
-Marcel Desailly/Desailly|ZAG
-Laurent Blanc/Blanc|ZAG
-Fernando Hierro/Hierro|ZAG
-Ronald Koeman/Koeman|ZAG
-Jaap Stam/Stam|ZAG
-Matthias Sammer/Sammer|ZAG
-Daniel Passarella/Passarella|ZAG
-Roberto Ayala/Ayala|ZAG
-Walter Samuel/Samuel|ZAG
-Giorgio Chiellini/Chiellini|ZAG
-Leonardo Bonucci/Bonucci|ZAG
-Marco Materazzi/Materazzi|ZAG
-Vincent Kompany/Kompany|ZAG
-Ricardo Carvalho|ZAG
-Diego Godín/Godín|ZAG
-Diego Lugano/Lugano|ZAG
-Nicolás Otamendi/Otamendi|ZAG
-Lisandro Martínez|ZAG
-Cristian Romero/Cuti Romero|ZAG
-Rúben Dias|ZAG
-Kalidou Koulibaly/Koulibaly|ZAG
-Milan Škriniar/Škriniar|ZAG
-Matthijs de Ligt/De Ligt|ZAG
-Aymeric Laporte/Laporte|ZAG
-John Stones/Stones|ZAG
-William Saliba/Saliba|ZAG
-Dayot Upamecano/Upamecano|ZAG
-Antonio Rüdiger/Rüdiger|ZAG
-Alessandro Bastoni/Bastoni|ZAG
-Manuel Akanji/Akanji|ZAG
-Tony Adams|ZAG
-Sol Campbell|ZAG
-Per Mertesacker/Mertesacker|ZAG
-Yerry Mina|ZAG
-Davinson Sánchez|ZAG
-Kim Min-jae|ZAG
-Maya Yoshida/Yoshida|ZAG
-Takehiro Tomiyasu/Tomiyasu|ZAG
-Íñigo Martínez|ZAG
-Carlos Gamarra/Gamarra|ZAG
-Iván Córdoba|ZAG
-Martín Cáceres|ZAG
-José María Giménez|ZAG
-Ronald Araújo/Araújo|ZAG
-Samuel Umtiti/Umtiti|ZAG
-Nacho|ZAG
-Pau Cubarsí/Cubarsí|ZAG
-Gonçalo Inácio|ZAG
-Jamie Carragher/Carragher|ZAG
-Sami Hyypiä/Hyypiä|ZAG
-Lucas Beraldo/Beraldo|ZAG
-Andreas Christensen|ZAG
-Joël Matip/Matip|ZAG
-Ibrahima Konaté/Konaté|ZAG
-Fikayo Tomori/Tomori|ZAG
-Dan Burn|ZAG
-Bobby Moore|ZAG
-Elías Figueroa/Figueroa|ZAG
-Ruggeri/Oscar Ruggeri|ZAG
-Rafael Márquez/Márquez|ZAG
-Leonardo Balerdi/Balerdi|ZAG
-Germán Pezzella/Pezzella|ZAG
-Dunga|VOL
-Mauro Silva|VOL
-Gilberto Silva|VOL
-Clodoaldo|VOL
-Emerson|VOL
-Fernandinho|VOL
-Casemiro|VOL
-Fabinho|VOL
-Josué|VOL
-Mineiro|VOL
-Lucas Leiva|VOL
-Willian Arão|VOL
-Allan|VOL
-João Gomes|VOL
-Zé Elias|VOL
-Mazinho|VOL,MC
-César Sampaio|VOL
-Freddy Rincón/Rincón|VOL
-Andrade|VOL
-Batista|VOL
-Chicão|VOL
-Zito|VOL
-Claude Makélélé/Makélélé|VOL
-Patrick Vieira/Vieira|VOL
-Gennaro Gattuso/Gattuso|VOL
-Sergio Busquets/Busquets|VOL
-Xabi Alonso|VOL
-Javier Mascherano/Mascherano|VOL
-N'Golo Kanté/Kanté|VOL
-Rodri|VOL
-Michael Essien/Essien|VOL
-Didier Deschamps/Deschamps|VOL
-Frank Rijkaard/Rijkaard|VOL
-Edgar Davids/Davids|VOL
-Roy Keane/Keane|VOL
-Fernando Redondo/Redondo|VOL
-Diego Simeone/Simeone|VOL
-Esteban Cambiasso/Cambiasso|VOL
-Javi Martínez|VOL
-Declan Rice/Rice|VOL
-Aurélien Tchouaméni/Tchouaméni|VOL
-Eduardo Camavinga/Camavinga|VOL
-Leandro Paredes/Paredes|VOL
-Guido Rodríguez|VOL
-Manuel Ugarte/Ugarte|VOL
-Rodrigo Bentancur/Bentancur|VOL
-Nemanja Matić/Matić|VOL
-Yaya Touré|VOL,MC
-Thiago Motta|VOL
-Martín Zubimendi/Zubimendi|VOL
-Granit Xhaka/Xhaka|VOL
-Wilmar Barrios|VOL
-Arturo Vidal/Vidal|VOL,MC
-Moisés Caicedo/Caicedo|VOL
-João Palhinha/Palhinha|VOL
-Sofyan Amrabat/Amrabat|VOL
-Wilfred Ndidi/Ndidi|VOL
-Gary Medel/Medel|VOL
-Lucas Torreira/Torreira|VOL
-Dani Parejo/Parejo|VOL
-Marcos Senna|VOL
-Daniele De Rossi/De Rossi|VOL
-Claudio Marchisio/Marchisio|VOL
-Bruno Guimarães|VOL,MC
-Douglas Luiz|VOL,MC
-Joelinton|VOL
-André|VOL
-Falcão|MC
-Toninho Cerezo/Cerezo|MC
-Gérson|MC
-Didi|MC
-Paulinho|MC
-Elias|MC
-Ramires|MC
-Hernanes|MC
-Kléberson|MC
-Arthur|MC
-Renato Augusto|MC
-Elano|MC
-Fred|MC,CA
-Tchê Tchê|MC
-Rodrigo Nestor|MC
-Andreas Pereira|MC
-Lothar Matthäus/Matthäus|MC
-Andrea Pirlo/Pirlo|MC
-Xavi/Xavi Hernández|MC
-Andrés Iniesta/Iniesta|MC
-Luka Modrić/Modrić|MC
-Toni Kroos/Kroos|MC,MEI
-Frank Lampard/Lampard|MC
-Steven Gerrard/Gerrard|MC
-Paul Scholes/Scholes|MC
-Clarence Seedorf/Seedorf|MC
-Michael Ballack/Ballack|MC
-Bastian Schweinsteiger/Schweinsteiger|MC
-Sami Khedira/Khedira|MC
-Paul Pogba/Pogba|MC
-Juan Sebastián Verón/Verón|MC
-Cesc Fàbregas/Fàbregas|MC
-Pedri|MC
-Gavi|MC
-Jude Bellingham/Bellingham|MC
-Alexis Mac Allister/Mac Allister|MC
-Enzo Fernández|MC
-Rodrigo De Paul/De Paul|MC
-Federico Valverde/Fede Valverde|MC
-Marco Verratti/Verratti|MC
-Nicolò Barella/Barella|MC
-Sandro Tonali/Tonali|MC
-Sergej Milinković-Savić/Milinković-Savić|MC
-Georginio Wijnaldum/Wijnaldum|MC
-Mateo Kovačić/Kovačić|MC
-Ivan Rakitić/Rakitić|MC
-Frenkie de Jong/De Jong|MC
-Ilkay Gündoğan/Gündoğan|MC
-Thiago Alcântara/Thiago|MC
-Park Ji-sung|MC,PD
-Dani Olmo/Olmo|MC
-Ryan Gravenberch/Gravenberch|MC
-Dominik Szoboszlai/Szoboszlai|MC
-Warren Zaïre-Emery/Zaïre-Emery|MC
-Youri Tielemans/Tielemans|MC
-Aaron Ramsey|MC
-Kevin De Bruyne/De Bruyne|MC,MEI
-Ruud Gullit/Gullit|MC,MEI
-Vitinha|MC
-Zico|MEI
-Sócrates|MEI
-Roberto Rivellino/Rivellino|MEI,PE
-Ademir da Guia|MEI
-Pelé|MEI,CA
-Rivaldo|MEI,PE
-Ronaldinho/Ronaldinho Gaúcho|MEI,PE
-Kaká|MEI
-Juninho Pernambucano|MEI
-Juninho Paulista|MEI
-Raí|MEI
-Djalminha|MEI
-Zinho|MEI,PE
-Leonardo|MEI
-Giovanni|MEI
-Marcelinho Carioca|MEI
-Ricardinho|MEI
-Diego Ribas/Diego|MEI
-Paulo Henrique Ganso/Ganso|MEI
-Philippe Coutinho/Coutinho|MEI,CA
-Lucas Paquetá/Paquetá|MEI
-Giorgian de Arrascaeta/Arrascaeta|MEI
-Everton Ribeiro|MEI
-Raphael Veiga/Veiga|MEI
-Jádson|MEI
-Jorge Valdivia/Valdivia|MEI
-Andrés D'Alessandro/D'Alessandro|MEI
-Darío Conca/Conca|MEI
-Dejan Petković/Petković|MEI
-Tostão|MEI,CA
-Dirceu|MEI
-Thiago Neves|MEI
-Diego Souza|MEI,CA
-Douglas|MEI
-Pita|MEI
-Adílio|MEI
-Geovani|MEI
-Mário Sérgio|MEI
-Zenon|MEI
-Silas|MEI
-Valdo|MEI
-Jorge Wagner|MEI
-Lucas Lima|MEI
-Nenê|MEI
-Luan|MEI
-Matheus Pereira|MEI
-Gustavo Scarpa/Scarpa|MEI
-Diego Maradona/Maradona|MEI
-Lionel Messi/Messi/Leo Messi|MEI,PD,CA
-Zinédine Zidane/Zidane|MEI
-Michel Platini/Platini|MEI
-Johan Cruyff/Cruyff|MEI,CA
-Alfredo Di Stéfano/Di Stéfano|MEI,CA
-Bobby Charlton|MEI
-Mesut Özil/Özil|MEI
-Juan Román Riquelme/Riquelme|MEI
-Francesco Totti/Totti|MEI,CA
-Roberto Baggio/Baggio|MEI,CA
-Rui Costa|MEI
-Deco|MEI
-Wesley Sneijder/Sneijder|MEI
-Gheorghe Hagi/Hagi|MEI
-Michael Laudrup/Laudrup|MEI
-Carlos Valderrama/Valderrama|MEI
-Enzo Francescoli/Francescoli|MEI
-Pablo Aimar/Aimar|MEI
-David Silva|MEI
-Juan Mata/Mata|MEI
-Isco|MEI
-Bruno Fernandes|MEI
-Bernardo Silva|MEI,PD
-Martin Ødegaard/Ødegaard|MEI
-Jamal Musiala/Musiala|MEI
-Florian Wirtz/Wirtz|MEI
-James Rodríguez/James|MEI
-Paulo Dybala/Dybala|MEI,CA
-Giovani Lo Celso/Lo Celso|MEI
-Marek Hamšík/Hamšík|MEI
-Miralem Pjanić/Pjanić|MEI
-Christian Eriksen/Eriksen|MEI
-Shinji Kagawa/Kagawa|MEI
-Shunsuke Nakamura/Nakamura|MEI
-Hidetoshi Nakata/Nakata|MEI
-Keisuke Honda/Honda|MEI
-Rafael van der Vaart/Van der Vaart|MEI
-Guti|MEI
-Juan Carlos Valerón/Valerón|MEI
-Gianfranco Zola/Zola|MEI
-Günter Netzer/Netzer|MEI
-Wolfgang Overath/Overath|MEI
-Gianni Rivera/Rivera|MEI
-Sandro Mazzola/Mazzola|MEI
-Raymond Kopa/Kopa|MEI
-Pavel Nedvěd/Nedvěd|MEI
-Jay-Jay Okocha/Okocha|MEI
-Xavi Simons|MEI
-Thomas Müller/Müller|MEI,PD,CA
-Mario Götze/Götze|MEI
-Marco Reus/Reus|MEI
-Phil Foden/Foden|MEI,PE
-Cole Palmer/Palmer|MEI
-Mason Mount/Mount|MEI
-Samir Nasri/Nasri|MEI
-Mathieu Valbuena/Valbuena|MEI
-Yoann Gourcuff/Gourcuff|MEI
-Hakan Çalhanoğlu/Çalhanoğlu|MEI
-Arda Güler/Güler|MEI
-Arda Turan|MEI
-Luis Alberto|MEI
-Riyad Mahrez/Mahrez|MEI,PD
-Kenny Dalglish/Dalglish|MEI,CA
-Teófilo Cubillas/Cubillas|MEI,CA
-Valentín Castellanos|MEI
-Ángel Di María/Di María|MEI,PE,PD
-Manuel Lanzini|MEI
-Ever Banega/Banega|MEI
-Marco Asensio/Asensio|MEI
-Nicolás De la Cruz/De la Cruz|MEI
-Nico Paz|MEI
-Kenan Yıldız/Yıldız|MEI
-Exequiel Palacios/Palacios|MEI
-Mário Zagallo/Zagallo|PE
-Edu|PE
-Denílson|PE
-Robinho|PE
-Neymar/Neymar Jr|PE,CA
-Vinícius Júnior/Vini Jr/Vinicius|PE,CA
-Gabriel Martinelli/Martinelli|PE
-Everton Cebolinha/Cebolinha|PE
-Dudu|PE
-Paulo Nunes|PE
-Canhoteiro|PE
-Éder|PE
-Joel|PE
-Sávio|PE
-Marcelinho Paraíba|PE
-Douglas Costa|PE,PD
-Rony|PE
-Luiz Henrique|PE
-Bruno Henrique|PE
-Michael|PE
-Wellington Rato|PE
-Keno|PE
-Cristiano Ronaldo/CR7|PE,CA
-Franck Ribéry/Ribéry|PE
-Sadio Mané/Mané|PE
-Eden Hazard/Hazard|PE
-Ryan Giggs/Giggs|PE
-Marc Overmars/Overmars|PE
-David Ginola/Ginola|PE
-Robert Pirès/Pirès|PE
-Raheem Sterling/Sterling|PE
-Leroy Sané/Sané|PE
-Kingsley Coman/Coman|PE
-Nico Williams|PE
-Khvicha Kvaratskhelia/Kvaratskhelia/Kvara|PE
-Rafael Leão|PE
-Jérémy Doku/Doku|PE
-Lorenzo Insigne/Insigne|PE
-Pedro Rodríguez|PE
-Andrei Arshavin/Arshavin|PE
-Nani|PE
-Christian Pulisic/Pulisic|PE
-Son Heung-min/Son|PE
-Wilfried Zaha/Zaha|PE
-Alexis Sánchez/Alexis|PE
-Cody Gakpo/Gakpo|PE
-Ezequiel Lavezzi/Lavezzi|PE
-Luis Díaz|PE
-Marcus Rashford/Rashford|PE
-Jack Grealish/Grealish|PE
-Hirving Lozano/Chucky Lozano|PE
-Thierry Henry/Henry|PE,CA
-Kaoru Mitoma/Mitoma|PE
-Ansu Fati/Ansu|PE
-Francisco Gento/Gento|PE
-Paulo Futre/Futre|PE
-Hristo Stoichkov/Stoichkov|PE,CA
-Gareth Bale/Bale|PE,PD
-Garrincha/Mané Garrincha|PD
-Jairzinho|PD
-Renato Gaúcho/Renato Portaluppi|PD
-Raphinha|PD
-Rodrygo|PD
-Antony|PD
-Willian|PD
-Lucas Moura|PD
-Hulk|PD
-Savinho|PD
-Estêvão|PD
-Julinho Botelho/Julinho|PD
-Dorval|PD
-Tita|PD
-Luizinho|PD
-Luiz Araújo|PD
-Luís Figo/Figo|PD
-Arjen Robben/Robben|PD
-Mohamed Salah/Salah|PD
-George Best|PD
-Stanley Matthews|PD
-Lamine Yamal/Yamal|PD
-Bukayo Saka/Saka|PD
-Ousmane Dembélé/Dembélé|PD
-José Callejón/Callejón|PD
-Joaquín|PD
-Ricardo Quaresma/Quaresma|PD
-Hakim Ziyech/Ziyech|PD
-Xherdan Shaqiri/Shaqiri|PD
-Takefusa Kubo/Kubo|PD
-Andriy Yarmolenko/Yarmolenko|PD
-David Beckham/Beckham|PD
-Federico Chiesa/Chiesa|PD
-Domenico Berardi/Berardi|PD
-Bryan Mbeumo/Mbeumo|PD
-Mohammed Kudus/Kudus|PD
-Michael Olise/Olise|PD
-Jadon Sancho/Sancho|PD
-Serge Gnabry/Gnabry|PD
-Dejan Kulusevski/Kulusevski|PD
-Pablo Sarabia/Sarabia|PD
-Gonçalo Guedes|PD
-Theo Walcott/Walcott|PD
-Aaron Lennon/Lennon|PD
-Shaun Wright-Phillips|PD
-Steve McManaman/McManaman|PD
-Thomas Häßler|PD
-Pierre Littbarski/Littbarski|PD
-Bruno Conti/Conti|PD
-Ariel Ortega/Ortega|PD
-Claudio Caniggia/Caniggia|PD,CA
-Juan Pablo Ángel|PD
-Romário|CA
-Ronaldo/Ronaldo Fenômeno/Ronaldo Nazário|CA
-Adriano/Adriano Imperador|CA
-Careca|CA
-Roberto Dinamite/Dinamite|CA
-Vavá|CA
-Arthur Friedenreich/Friedenreich|CA
-Leônidas da Silva/Leônidas|CA
-Ademir de Menezes/Ademir|CA
-Serginho Chulapa|CA
-Casagrande|CA
-Evair|CA
-Washington|CA
-Luís Fabiano|CA
-Grafite|CA
-Jô|CA
-Vágner Love|CA
-Nilmar|CA
-Alexandre Pato/Pato|CA
-Leandro Damião/Damião|CA
-Gabigol/Gabriel Barbosa|CA
-Pedro|CA
-Germán Cano/Cano|CA
-Yuri Alberto|CA
-Jonathan Calleri/Calleri|CA
-Roger Guedes|CA
-Kaio Jorge|CA
-Vitor Roque|CA
-Roberto Firmino/Firmino|CA
-Gabriel Jesus|CA
-Richarlison|CA
-Endrick|CA
-Márcio Amoroso/Amoroso|CA
-Giovane Élber/Élber|CA
-Ailton|CA
-Mário Jardel/Jardel|CA
-Edmundo|CA
-Túlio Maravilha/Túlio|CA
-Dodô|CA
-Viola|CA
-França|CA
-Nunes|CA
-Dadá Maravilha/Dario|CA
-Bebeto|CA
-Edílson|CA
-Deivid|CA
-Dagoberto|CA
-Borges|CA
-Hernán Barcos/Barcos|CA
-Ricardo Oliveira|CA
-Kléber Gladiador|CA
-Obina|CA
-Luizão|CA
-Marques|CA
-Ronaldão|CA
-Paulinho McLaren|CA
-Sonny Anderson|CA
-Elkeson|CA
-Diego Tardelli/Tardelli|CA
-Baltazar|CA
-Zizinho|CA
-Heleno de Freitas/Heleno|CA
-Eusébio|CA
-Ferenc Puskás/Puskás|CA
-Gerd Müller|CA
-Marco van Basten/Van Basten|CA
-Gabriel Batistuta/Batistuta|CA
-Hernán Crespo/Crespo|CA
-Jürgen Klinsmann/Klinsmann|CA
-Karl-Heinz Rummenigge/Rummenigge|CA
-Paolo Rossi|CA
-Christian Vieri/Vieri|CA
-Filippo Inzaghi/Inzaghi/Pippo Inzaghi|CA
-Andriy Shevchenko/Shevchenko|CA
-George Weah/Weah|CA
-Samuel Eto'o/Eto'o|CA
-Didier Drogba/Drogba|CA
-Zlatan Ibrahimović/Ibrahimović/Zlatan|CA
-Robert Lewandowski/Lewandowski|CA
-Luis Suárez/Suárez|CA
-Edinson Cavani/Cavani|CA
-Diego Forlán/Forlán|CA
-Sergio Agüero/Agüero/Kun Agüero|CA
-Carlos Tévez/Tévez|CA
-Gonzalo Higuaín/Higuaín|CA
-Lautaro Martínez/Lautaro|CA
-Julián Álvarez|CA
-Karim Benzema/Benzema|CA
-Kylian Mbappé/Mbappé|CA
-Erling Haaland/Haaland|CA
-Harry Kane/Kane|CA
-Gary Lineker/Lineker|CA
-Alan Shearer/Shearer|CA
-Wayne Rooney/Rooney|CA
-Michael Owen/Owen|CA
-Ruud van Nistelrooy/Van Nistelrooy|CA
-Dennis Bergkamp/Bergkamp|CA
-Patrick Kluivert/Kluivert|CA
-Raúl/Raúl González|CA
-Fernando Torres/Torres|CA
-David Villa/Villa|CA
-Fernando Morientes/Morientes|CA
-Hugo Sánchez|CA
-Javier Hernández/Chicharito|CA
-Iván Zamorano/Zamorano|CA
-Marcelo Salas/Salas|CA
-Davor Šuker/Šuker|CA
-Mario Kempes/Kempes|CA
-Oliver Bierhoff/Bierhoff|CA
-Miroslav Klose/Klose|CA
-Rudi Völler/Völler|CA
-David Trezeguet/Trezeguet|CA
-Jean-Pierre Papin/Papin|CA
-Eric Cantona/Cantona|CA
-Olivier Giroud/Giroud|CA
-Victor Osimhen/Osimhen|CA
-Dušan Vlahović/Vlahović|CA
-Alexander Isak/Isak|CA
-Viktor Gyökeres/Gyökeres|CA
-Ollie Watkins/Watkins|CA
-Darwin Núñez/Darwin|CA
-Romelu Lukaku/Lukaku|CA
-Edin Džeko/Džeko|CA
-Ciro Immobile/Immobile|CA
-Álvaro Morata/Morata|CA
-Diego Costa|CA
-Radamel Falcao/Falcao|CA
-Pierre-Emerick Aubameyang/Aubameyang|CA
-Mario Mandžukić/Mandžukić|CA
-Dirk Kuyt/Kuyt|CA
-Robin van Persie/Van Persie|CA
-Luca Toni/Toni|CA
-Alessandro Del Piero/Del Piero|CA
-Henrik Larsson/Larsson|CA
-Dwight Yorke/Yorke|CA
-Andy Cole|CA
-Ian Rush/Rush|CA
-Robbie Fowler/Fowler|CA
-Jamie Vardy/Vardy|CA
-Nwankwo Kanu/Kanu|CA
-Roger Milla/Milla|CA
-Abedi Pelé|CA
-Ahn Jung-hwan|CA
-Uwe Seeler/Seeler|CA
-Joshua Zirkzee/Zirkzee|CA
-Fabio Quagliarella/Quagliarella|CA
-Jorge Valdano/Valdano|CA
-Yakubu Aiyegbeni/Yakubu|CA
-Ian Wright|CA
-Paulo Wanchope/Wanchope|CA
-Chris Wood|CA
-Tony Yeboah/Yeboah|CA
-Simone Zaza/Zaza|CA
-Antoine Griezmann/Griezmann|CA
-Rafael Santos Borré/Borré|CA
-Enner Valencia|CA
-Salomón Rondón/Rondón|CA
-Óscar Cardozo/Cardozo|CA
-Roque Santa Cruz/Santa Cruz|CA
-Hugo Ekitiké/Ekitiké|CA
-Benjamin Šeško/Šeško|CA
-Randal Kolo Muani/Kolo Muani|CA
-Marcus Thuram|CA
-Rasmus Højlund/Højlund|CA
-Gianluca Scamacca/Scamacca|CA
-Mateo Retegui/Retegui|CA
-Lukas Podolski/Podolski|CA
-Mario Gómez|CA
-Emmanuel Adebayor/Adebayor|CA
-Obafemi Martins/Martins|CA
-Asamoah Gyan/Gyan|CA
-Frédéric Kanouté/Kanouté|CA
-Youssef En-Nesyri/En-Nesyri|CA
-Mehdi Taremi/Taremi|CA
-Ali Daei/Daei|CA
-Sardar Azmoun/Azmoun|CA
-Kazuyoshi Miura/Kazu Miura|CA
-Landon Donovan/Donovan|CA
-Clint Dempsey/Dempsey|CA
-Carlos Vela/Vela|CA
-Raúl Jiménez|CA
-Santiago Giménez|CA
-Luis Muriel/Muriel|CA
-Duván Zapata/Zapata|CA
-Gianluca Vialli/Vialli|CA
-Roberto Mancini|CA
-Valentin Ivanov|CA
-Oleg Blokhin/Blokhin|CA
-Igor Belanov/Belanov|CA
-Grzegorz Lato/Lato|CA
-Zbigniew Boniek/Boniek|CA
-Kevin Keegan/Keegan|CA
-Geoff Hurst/Hurst|CA
-Jimmy Greaves/Greaves|CA
-Just Fontaine/Fontaine|CA
-Sándor Kocsis/Kocsis|CA
-Josef Bican/Bican|CA
-Luis Artime/Artime|CA
-Pedro Rocha|CA
-Fernando Morena/Morena|CA
-Héctor Scarone/Scarone|CA
-Óscar Míguez/Míguez|CA
-Juan Alberto Schiaffino/Schiaffino|CA
-Alcides Ghiggia/Ghiggia|CA
-Arsenio Erico/Erico|CA
-Alex Mineiro|CA
-Matheus Cunha|CA
-Pedro Raul|CA
-Kléber Pereira|CA
-Juan Fernando Quintero/Quintero|MEI
-Quincy Promes/Promes|PE
-Quini|CA
-Ulises Dávila|MEI
-Umar Sadiq|CA
-Xisco|CA`;
+const PDATA = `Taffarel|GOL|92
+Marcos|GOL|89
+Rogério Ceni|GOL|92
+Dida|GOL|92
+Júlio César|GOL|92
+Alisson|GOL|93
+Ederson|GOL|89
+Gilmar|GOL|92
+Leão|GOL|89
+Zetti|GOL|86
+Cássio|GOL|85
+Fábio|GOL|84
+Weverton|GOL|85
+Victor|GOL|84
+Bento|GOL|84
+Hugo Souza|GOL|82
+John|GOL|81
+Rossi|GOL|82
+Gatito Fernández|GOL|83
+Everson|GOL|82
+Marcelo Grohe|GOL|83
+Diego Alves|GOL|84
+Jefferson|GOL|83
+Doni|GOL|82
+Raul Plassmann|GOL|85
+Zé Carlos|GOL|82
+Castilho|GOL|87
+Barbosa|GOL|86
+Manga|GOL|86
+Félix|GOL|85
+Waldir Peres|GOL|84
+Carlos|GOL|85
+Velloso|GOL|82
+Danrlei|GOL|84
+Clemer|GOL|83
+Fernando Prass|GOL|82
+Neto|GOL,MEI|86
+Gianluigi Buffon/Buffon|GOL|94
+Iker Casillas/Casillas|GOL|94
+Manuel Neuer/Neuer|GOL|94
+Oliver Kahn/Kahn|GOL|93
+Peter Schmeichel|GOL|93
+Kasper Schmeichel|GOL|84
+Edwin van der Sar/Van der Sar|GOL|93
+Petr Čech/Čech|GOL|93
+Lev Yashin/Yashin|GOL|95
+Dino Zoff/Zoff|GOL|93
+Gordon Banks/Banks|GOL|93
+Sepp Maier|GOL|92
+René Higuita/Higuita|GOL|84
+José Luis Chilavert/Chilavert|GOL|87
+Thibaut Courtois/Courtois|GOL|93
+Jan Oblak/Oblak|GOL|92
+Marc-André ter Stegen/Ter Stegen|GOL|92
+David de Gea/De Gea|GOL|89
+Keylor Navas|GOL|88
+Hugo Lloris/Lloris|GOL|88
+Fabien Barthez/Barthez|GOL|88
+Víctor Valdés/Valdés|GOL|86
+Pepe Reina/Reina|GOL|86
+Gianluigi Donnarumma/Donnarumma|GOL|92
+Emiliano Martínez/Dibu Martínez|GOL|88
+Guillermo Ochoa/Ochoa|GOL|84
+Wojciech Szczęsny/Szczęsny|GOL|86
+Samir Handanović/Handanović|GOL|86
+André Onana/Onana|GOL|84
+Édouard Mendy|GOL|85
+Yassine Bounou/Bounou|GOL|85
+Jordan Pickford/Pickford|GOL|84
+David Seaman/Seaman|GOL|87
+Peter Shilton/Shilton|GOL|88
+Andoni Zubizarreta/Zubizarreta|GOL|86
+Francesco Toldo/Toldo|GOL|87
+Gianluca Pagliuca/Pagliuca|GOL|86
+Angelo Peruzzi/Peruzzi|GOL|87
+Jens Lehmann/Lehmann|GOL|86
+Jerzy Dudek/Dudek|GOL|84
+Vítor Baía|GOL|86
+Unai Simón|GOL|85
+David Raya/Raya|GOL|85
+Guglielmo Vicario/Vicario|GOL|84
+Yann Sommer/Sommer|GOL|85
+Mike Maignan/Maignan|GOL|87
+Kepa Arrizabalaga/Kepa|GOL|83
+David Ospina/Ospina|GOL|84
+Fernando Muslera/Muslera|GOL|84
+Sergio Goycochea/Goycochea|GOL|84
+Franco Armani/Armani|GOL|84
+Ubaldo Fillol/Fillol|GOL|88
+Carlos Roa|GOL|83
+Óscar Córdoba|GOL|82
+Walter Zenga/Zenga|GOL|87
+Jorge Campos|GOL|84
+Tim Howard/Howard|GOL|84
+Brad Friedel/Friedel|GOL|84
+Mark Schwarzer/Schwarzer|GOL|83
+Igor Akinfeev/Akinfeev|GOL|84
+Rinat Dasayev/Dasayev|GOL|88
+Thomas Ravelli/Ravelli|GOL|84
+Michel Preud'homme/Preud'homme|GOL|88
+Ricardo Zamora/Zamora|GOL|89
+Bodo Illgner/Illgner|GOL|85
+Toni Schumacher/Schumacher|GOL|87
+Rui Patrício|GOL|84
+Diogo Costa|GOL|85
+Andriy Lunin/Lunin|GOL|82
+Gregor Kobel/Kobel|GOL|85
+Alex Meret/Meret|GOL|82
+Mattia Perin/Perin|GOL|82
+Willy Caballero|GOL|80
+Sergio Romero|GOL|82
+Nahuel Guzmán|GOL|82
+Agustín Rossi|GOL|82
+Cafu|LD|95
+Carlos Alberto Torres/Carlos Alberto|LD|93
+Djalma Santos|LD|93
+Jorginho|LD,VOL|88
+Leandro|LD|88
+Josimar|LD|85
+Juliano Belletti/Belletti|LD|85
+Maicon|LD|89
+Daniel Alves/Dani Alves|LD|94
+Danilo|LD|85
+Fagner|LD|82
+Mancini|LD|82
+Cicinho|LD|82
+Rafinha|LD|84
+Marcos Rocha|LD|82
+Mayke|LD|82
+Zé Maria|LD|86
+Nelinho|LD|86
+Léo Moura|LD|82
+Vanderson|LD|82
+Emerson Royal|LD|82
+Yan Couto|LD|82
+Arboleda|LD|82
+Odair|LD|82
+Paulo Roberto|LD|82
+Philipp Lahm/Lahm|LD|94
+Javier Zanetti/Zanetti|LD|93
+Lilian Thuram/Thuram|LD|93
+Gary Neville|LD|87
+Dani Carvajal/Carvajal|LD|88
+Míchel Salgado/Salgado|LD|86
+Héctor Bellerín/Bellerín|LD|84
+Trent Alexander-Arnold/Alexander-Arnold/Trent|LD|92
+Kyle Walker/Walker|LD|88
+Achraf Hakimi/Hakimi|LD|92
+João Cancelo/Cancelo|LD|88
+Joshua Kimmich/Kimmich|LD|92
+Benjamin Pavard/Pavard|LD|85
+Jules Koundé/Koundé|LD|87
+César Azpilicueta/Azpilicueta|LD|86
+Stephan Lichtsteiner/Lichtsteiner|LD|82
+Sergi Roberto|LD|82
+Pablo Zabaleta/Zabaleta|LD|82
+Bacary Sagna/Sagna|LD|82
+Branislav Ivanović/Ivanović|LD|82
+Reece James|LD|85
+Kieran Trippier/Trippier|LD|85
+Jesús Navas|LD,PD|85
+Álvaro Odriozola/Odriozola|LD|82
+Gianluca Zambrotta/Zambrotta|LD|89
+Christian Panucci/Panucci|LD|86
+Mauro Tassotti/Tassotti|LD|87
+Giuseppe Bergomi/Bergomi|LD|88
+Glen Johnson|LD|82
+Jeremie Frimpong/Frimpong|LD|85
+Denzel Dumfries/Dumfries|LD|84
+Giovanni Di Lorenzo/Di Lorenzo|LD|85
+Nahuel Molina|LD|82
+Gonzalo Montiel/Montiel|LD|82
+Juan Cuadrado/Cuadrado|LD,PD|85
+Antonio Valencia|LD,PD|82
+DeAndre Yedlin/Yedlin|LD|82
+Pedro Porro/Porro|LD|84
+Diogo Dalot/Dalot|LD|82
+Nélson Semedo/Semedo|LD|82
+Sergiño Dest/Dest|LD|82
+Paulo Ferreira|LD|82
+Berti Vogts/Vogts|LD|88
+Manfred Kaltz/Kaltz|LD|87
+Ashley Young|LD|82
+Roberto Carlos|LE|95
+Nilton Santos|LE|94
+Júnior/Leovegildo Júnior|LE,MC|92
+Branco|LE|88
+Marcelo|LE|93
+Serginho|LE|85
+Kléber|LE|84
+Filipe Luís|LE|86
+Alex Sandro|LE|85
+Guilherme Arana/Arana|LE|82
+Renan Lodi/Lodi|LE|82
+Alex Telles/Telles|LE|82
+Reinaldo|LE,CA|92
+Michel Bastos|LE|82
+Zé Roberto|LE,MC|87
+Silvinho|LE|82
+Gilberto|LE|84
+Wendell|LE|82
+Juan Pablo Sorín/Sorín|LE|86
+Everaldo|LE|85
+Wladimir|LE|86
+Marco Antônio|LE|85
+Athirson|LE|82
+Marcos Alonso|LE|84
+Jordi Alba/Alba|LE|88
+Paolo Maldini/Maldini|LE|96
+Bixente Lizarazu/Lizarazu|LE|92
+Ashley Cole|LE|92
+Patrice Evra/Evra|LE|88
+Andreas Brehme/Brehme|LE|93
+Giacinto Facchetti/Facchetti|LE|93
+Éric Abidal/Abidal|LE|86
+Andrew Robertson/Robertson|LE|88
+Alphonso Davies/Davies|LE|87
+Theo Hernández/Theo|LE|87
+Lucas Hernández|LE|85
+Alejandro Grimaldo/Grimaldo|LE|85
+Ferland Mendy|LE|84
+Luke Shaw/Shaw|LE|84
+Nicolás Tagliafico/Tagliafico|LE|82
+Marcos Acuña/Acuña|LE|82
+Gaël Clichy/Clichy|LE|82
+Aleksandar Kolarov/Kolarov|LE|84
+Leighton Baines/Baines|LE|82
+Stuart Pearce/Pearce|LE|86
+Joan Capdevila/Capdevila|LE|82
+Fabio Grosso/Grosso|LE|85
+Antonio Cabrini/Cabrini|LE|88
+David Alaba/Alaba|LE|88
+Nuno Mendes|LE|86
+Raphaël Guerreiro/Guerreiro|LE|82
+Destiny Udogie/Udogie|LE|82
+Federico Dimarco/Dimarco|LE|86
+Ben Chilwell/Chilwell|LE|82
+Oleksandr Zinchenko/Zinchenko|LE|82
+Kieran Tierney/Tierney|LE|82
+Sergio Reguilón/Reguilón|LE|82
+Juan Bernat/Bernat|LE|82
+Ricardo Rodríguez|LE|82
+Yuto Nagatomo/Nagatomo|LE|82
+Matías Viña/Viña|LE|82
+Piero Hincapié/Hincapié|LE|82
+Pervis Estupiñán/Estupiñán|LE|82
+Josko Gvardiol/Gvardiol|LE|87
+Hans-Peter Briegel/Briegel|LE|86
+Lúcio|ZAG|93
+Juan|ZAG|88
+Thiago Silva|ZAG|93
+Marquinhos|ZAG|89
+Aldair|ZAG|92
+Mauro Galvão|ZAG|86
+Márcio Santos|ZAG|85
+Ricardo Gomes|ZAG|87
+Oscar|ZAG,MEI|82
+Luisão|ZAG|86
+David Luiz|ZAG|87
+Miranda|ZAG|86
+Éder Militão/Militão|ZAG|87
+Gabriel Magalhães|ZAG|88
+Gleison Bremer/Bremer|ZAG|86
+Dedé|ZAG|82
+Gil|ZAG|82
+Réver|ZAG|82
+Edu Dracena|ZAG|82
+Gustavo Gómez|ZAG|84
+Felipe Melo|ZAG,VOL|84
+Júnior Baiano|ZAG|86
+Antônio Carlos|ZAG|86
+Mozer|ZAG|92
+Bellini|ZAG|88
+Mauro Ramos|ZAG|88
+Brito|ZAG|86
+Piazza|ZAG|88
+Alex|ZAG,MEI|82
+Jemerson|ZAG|82
+Léo Ortiz|ZAG|82
+Murilo|ZAG|82
+Rodrigo Caio|ZAG|82
+Domingos da Guia|ZAG|93
+Luís Pereira|ZAG|87
+Amaral|ZAG|82
+Edinho|ZAG|86
+Franz Beckenbauer/Beckenbauer|ZAG|97
+Franco Baresi/Baresi|ZAG|95
+Fabio Cannavaro/Cannavaro|ZAG|94
+Alessandro Nesta/Nesta|ZAG|94
+Carles Puyol/Puyol|ZAG|94
+Gerard Piqué/Piqué|ZAG|93
+Sergio Ramos|ZAG|94
+Pepe|ZAG,PE|88
+Virgil van Dijk/Van Dijk|ZAG|94
+Rio Ferdinand/Ferdinand|ZAG|93
+Nemanja Vidić/Vidić|ZAG|92
+John Terry/Terry|ZAG|93
+Mats Hummels/Hummels|ZAG|92
+Jérôme Boateng/Boateng|ZAG|88
+Raphaël Varane/Varane|ZAG|89
+Marcel Desailly/Desailly|ZAG|93
+Laurent Blanc/Blanc|ZAG|89
+Fernando Hierro/Hierro|ZAG|93
+Ronald Koeman/Koeman|ZAG|93
+Jaap Stam/Stam|ZAG|90
+Matthias Sammer/Sammer|ZAG|93
+Daniel Passarella/Passarella|ZAG|93
+Roberto Ayala/Ayala|ZAG|88
+Walter Samuel/Samuel|ZAG|89
+Giorgio Chiellini/Chiellini|ZAG|92
+Leonardo Bonucci/Bonucci|ZAG|88
+Marco Materazzi/Materazzi|ZAG|85
+Vincent Kompany/Kompany|ZAG|89
+Ricardo Carvalho|ZAG|89
+Diego Godín/Godín|ZAG|92
+Diego Lugano/Lugano|ZAG|85
+Nicolás Otamendi/Otamendi|ZAG|86
+Lisandro Martínez|ZAG|86
+Cristian Romero/Cuti Romero|ZAG|87
+Rúben Dias|ZAG|92
+Kalidou Koulibaly/Koulibaly|ZAG|88
+Milan Škriniar/Škriniar|ZAG|87
+Matthijs de Ligt/De Ligt|ZAG|86
+Aymeric Laporte/Laporte|ZAG|87
+John Stones/Stones|ZAG|86
+William Saliba/Saliba|ZAG|88
+Dayot Upamecano/Upamecano|ZAG|85
+Antonio Rüdiger/Rüdiger|ZAG|88
+Alessandro Bastoni/Bastoni|ZAG|87
+Manuel Akanji/Akanji|ZAG|85
+Tony Adams|ZAG|88
+Sol Campbell|ZAG|88
+Per Mertesacker/Mertesacker|ZAG|85
+Yerry Mina|ZAG|82
+Davinson Sánchez|ZAG|82
+Kim Min-jae|ZAG|87
+Maya Yoshida/Yoshida|ZAG|82
+Takehiro Tomiyasu/Tomiyasu|ZAG|82
+Íñigo Martínez|ZAG|82
+Carlos Gamarra/Gamarra|ZAG|88
+Iván Córdoba|ZAG|87
+Martín Cáceres|ZAG|82
+José María Giménez|ZAG|82
+Ronald Araújo/Araújo|ZAG|86
+Samuel Umtiti/Umtiti|ZAG|85
+Nacho|ZAG|82
+Pau Cubarsí/Cubarsí|ZAG|82
+Gonçalo Inácio|ZAG|82
+Jamie Carragher/Carragher|ZAG|86
+Sami Hyypiä/Hyypiä|ZAG|86
+Lucas Beraldo/Beraldo|ZAG|82
+Andreas Christensen|ZAG|82
+Joël Matip/Matip|ZAG|82
+Ibrahima Konaté/Konaté|ZAG|85
+Fikayo Tomori/Tomori|ZAG|82
+Dan Burn|ZAG|82
+Bobby Moore|ZAG|94
+Elías Figueroa/Figueroa|ZAG|91
+Ruggeri/Oscar Ruggeri|ZAG|87
+Rafael Márquez/Márquez|ZAG|87
+Leonardo Balerdi/Balerdi|ZAG|82
+Germán Pezzella/Pezzella|ZAG|82
+Dunga|VOL|92
+Mauro Silva|VOL|92
+Gilberto Silva|VOL|87
+Clodoaldo|VOL|92
+Emerson|VOL|86
+Fernandinho|VOL|87
+Casemiro|VOL|93
+Fabinho|VOL|87
+Josué|VOL|82
+Mineiro|VOL|82
+Lucas Leiva|VOL|85
+Willian Arão|VOL|82
+Allan|VOL|82
+João Gomes|VOL|82
+Zé Elias|VOL|82
+Mazinho|VOL,MC|85
+César Sampaio|VOL|85
+Freddy Rincón/Rincón|VOL|86
+Andrade|VOL|86
+Batista|VOL|82
+Chicão|VOL|82
+Zito|VOL|92
+Claude Makélélé/Makélélé|VOL|93
+Patrick Vieira/Vieira|VOL|93
+Gennaro Gattuso/Gattuso|VOL|89
+Sergio Busquets/Busquets|VOL|93
+Xabi Alonso|VOL|93
+Javier Mascherano/Mascherano|VOL|92
+N'Golo Kanté/Kanté|VOL|93
+Rodri|VOL|93
+Michael Essien/Essien|VOL|89
+Didier Deschamps/Deschamps|VOL|89
+Frank Rijkaard/Rijkaard|VOL|93
+Edgar Davids/Davids|VOL|92
+Roy Keane/Keane|VOL|92
+Fernando Redondo/Redondo|VOL|93
+Diego Simeone/Simeone|VOL|87
+Esteban Cambiasso/Cambiasso|VOL|87
+Javi Martínez|VOL|85
+Declan Rice/Rice|VOL|88
+Aurélien Tchouaméni/Tchouaméni|VOL|86
+Eduardo Camavinga/Camavinga|VOL|86
+Leandro Paredes/Paredes|VOL|84
+Guido Rodríguez|VOL|82
+Manuel Ugarte/Ugarte|VOL|84
+Rodrigo Bentancur/Bentancur|VOL|84
+Nemanja Matić/Matić|VOL|85
+Yaya Touré|VOL,MC|92
+Thiago Motta|VOL|85
+Martín Zubimendi/Zubimendi|VOL|85
+Granit Xhaka/Xhaka|VOL|85
+Wilmar Barrios|VOL|82
+Arturo Vidal/Vidal|VOL,MC|88
+Moisés Caicedo/Caicedo|VOL|87
+João Palhinha/Palhinha|VOL|85
+Sofyan Amrabat/Amrabat|VOL|82
+Wilfred Ndidi/Ndidi|VOL|82
+Gary Medel/Medel|VOL|84
+Lucas Torreira/Torreira|VOL|83
+Dani Parejo/Parejo|VOL|85
+Marcos Senna|VOL|85
+Daniele De Rossi/De Rossi|VOL|87
+Claudio Marchisio/Marchisio|VOL|85
+Bruno Guimarães|VOL,MC|86
+Douglas Luiz|VOL,MC|84
+Joelinton|VOL|82
+André|VOL|82
+Falcão|MC|93
+Toninho Cerezo/Cerezo|MC|92
+Gérson|MC|93
+Didi|MC|94
+Paulinho|MC|85
+Elias|MC|84
+Ramires|MC|85
+Hernanes|MC|85
+Kléberson|MC|83
+Arthur|MC|83
+Renato Augusto|MC|84
+Elano|MC|82
+Fred|MC,CA|85
+Tchê Tchê|MC|82
+Rodrigo Nestor|MC|82
+Andreas Pereira|MC|82
+Lothar Matthäus/Matthäus|MC|95
+Andrea Pirlo/Pirlo|MC|94
+Xavi/Xavi Hernández|MC|95
+Andrés Iniesta/Iniesta|MC|95
+Luka Modrić/Modrić|MC|94
+Toni Kroos/Kroos|MC,MEI|94
+Frank Lampard/Lampard|MC|93
+Steven Gerrard/Gerrard|MC|93
+Paul Scholes/Scholes|MC|93
+Clarence Seedorf/Seedorf|MC|93
+Michael Ballack/Ballack|MC|93
+Bastian Schweinsteiger/Schweinsteiger|MC|93
+Sami Khedira/Khedira|MC|86
+Paul Pogba/Pogba|MC|92
+Juan Sebastián Verón/Verón|MC|88
+Cesc Fàbregas/Fàbregas|MC|92
+Pedri|MC|92
+Gavi|MC|86
+Jude Bellingham/Bellingham|MC|93
+Alexis Mac Allister/Mac Allister|MC|87
+Enzo Fernández|MC|86
+Rodrigo De Paul/De Paul|MC|85
+Federico Valverde/Fede Valverde|MC|92
+Marco Verratti/Verratti|MC|89
+Nicolò Barella/Barella|MC|89
+Sandro Tonali/Tonali|MC|86
+Sergej Milinković-Savić/Milinković-Savić|MC|85
+Georginio Wijnaldum/Wijnaldum|MC|85
+Mateo Kovačić/Kovačić|MC|85
+Ivan Rakitić/Rakitić|MC|87
+Frenkie de Jong/De Jong|MC|88
+Ilkay Gündoğan/Gündoğan|MC|89
+Thiago Alcântara/Thiago|MC|89
+Park Ji-sung|MC,PD|85
+Dani Olmo/Olmo|MC|86
+Ryan Gravenberch/Gravenberch|MC|85
+Dominik Szoboszlai/Szoboszlai|MC|86
+Warren Zaïre-Emery/Zaïre-Emery|MC|82
+Youri Tielemans/Tielemans|MC|84
+Aaron Ramsey|MC|84
+Kevin De Bruyne/De Bruyne|MC,MEI|94
+Ruud Gullit/Gullit|MC,MEI|94
+Vitinha|MC|87
+Zico|MEI|96
+Sócrates|MEI|94
+Roberto Rivellino/Rivellino|MEI,PE|93
+Ademir da Guia|MEI|92
+Pelé|MEI,CA|98
+Rivaldo|MEI,PE|94
+Ronaldinho/Ronaldinho Gaúcho|MEI,PE|96
+Kaká|MEI|95
+Juninho Pernambucano|MEI|93
+Juninho Paulista|MEI|92
+Raí|MEI|92
+Djalminha|MEI|87
+Zinho|MEI,PE|87
+Leonardo|MEI|88
+Giovanni|MEI|87
+Marcelinho Carioca|MEI|87
+Ricardinho|MEI|85
+Diego Ribas/Diego|MEI|85
+Paulo Henrique Ganso/Ganso|MEI|84
+Philippe Coutinho/Coutinho|MEI,CA|89
+Lucas Paquetá/Paquetá|MEI|85
+Giorgian de Arrascaeta/Arrascaeta|MEI|86
+Everton Ribeiro|MEI|85
+Raphael Veiga/Veiga|MEI|82
+Jádson|MEI|82
+Jorge Valdivia/Valdivia|MEI|84
+Andrés D'Alessandro/D'Alessandro|MEI|86
+Darío Conca/Conca|MEI|85
+Dejan Petković/Petković|MEI|86
+Tostão|MEI,CA|93
+Dirceu|MEI|86
+Thiago Neves|MEI|84
+Diego Souza|MEI,CA|82
+Douglas|MEI|82
+Pita|MEI|82
+Adílio|MEI|86
+Geovani|MEI|82
+Mário Sérgio|MEI|82
+Zenon|MEI|82
+Silas|MEI|82
+Valdo|MEI|82
+Jorge Wagner|MEI|82
+Lucas Lima|MEI|82
+Nenê|MEI|82
+Luan|MEI|82
+Matheus Pereira|MEI|82
+Gustavo Scarpa/Scarpa|MEI|82
+Diego Maradona/Maradona|MEI|98
+Lionel Messi/Messi/Leo Messi|MEI,PD,CA|98
+Zinédine Zidane/Zidane|MEI|97
+Michel Platini/Platini|MEI|96
+Johan Cruyff/Cruyff|MEI,CA|97
+Alfredo Di Stéfano/Di Stéfano|MEI,CA|97
+Bobby Charlton|MEI|94
+Mesut Özil/Özil|MEI|92
+Juan Román Riquelme/Riquelme|MEI|93
+Francesco Totti/Totti|MEI,CA|94
+Roberto Baggio/Baggio|MEI,CA|94
+Rui Costa|MEI|92
+Deco|MEI|92
+Wesley Sneijder/Sneijder|MEI|92
+Gheorghe Hagi/Hagi|MEI|93
+Michael Laudrup/Laudrup|MEI|93
+Carlos Valderrama/Valderrama|MEI|92
+Enzo Francescoli/Francescoli|MEI|92
+Pablo Aimar/Aimar|MEI|87
+David Silva|MEI|92
+Juan Mata/Mata|MEI|86
+Isco|MEI|87
+Bruno Fernandes|MEI|92
+Bernardo Silva|MEI,PD|92
+Martin Ødegaard/Ødegaard|MEI|88
+Jamal Musiala/Musiala|MEI|88
+Florian Wirtz/Wirtz|MEI|88
+James Rodríguez/James|MEI|89
+Paulo Dybala/Dybala|MEI,CA|89
+Giovani Lo Celso/Lo Celso|MEI|84
+Marek Hamšík/Hamšík|MEI|86
+Miralem Pjanić/Pjanić|MEI|86
+Christian Eriksen/Eriksen|MEI|86
+Shinji Kagawa/Kagawa|MEI|85
+Shunsuke Nakamura/Nakamura|MEI|85
+Hidetoshi Nakata/Nakata|MEI|86
+Keisuke Honda/Honda|MEI|84
+Rafael van der Vaart/Van der Vaart|MEI|86
+Guti|MEI|85
+Juan Carlos Valerón/Valerón|MEI|87
+Gianfranco Zola/Zola|MEI|88
+Günter Netzer/Netzer|MEI|88
+Wolfgang Overath/Overath|MEI|88
+Gianni Rivera/Rivera|MEI|93
+Sandro Mazzola/Mazzola|MEI|89
+Raymond Kopa/Kopa|MEI|93
+Pavel Nedvěd/Nedvěd|MEI|93
+Jay-Jay Okocha/Okocha|MEI|88
+Xavi Simons|MEI|86
+Thomas Müller/Müller|MEI,PD,CA|90
+Mario Götze/Götze|MEI|86
+Marco Reus/Reus|MEI|88
+Phil Foden/Foden|MEI,PE|89
+Cole Palmer/Palmer|MEI|88
+Mason Mount/Mount|MEI|84
+Samir Nasri/Nasri|MEI|85
+Mathieu Valbuena/Valbuena|MEI|82
+Yoann Gourcuff/Gourcuff|MEI|82
+Hakan Çalhanoğlu/Çalhanoğlu|MEI|86
+Arda Güler/Güler|MEI|82
+Arda Turan|MEI|84
+Luis Alberto|MEI|82
+Riyad Mahrez/Mahrez|MEI,PD|88
+Kenny Dalglish/Dalglish|MEI,CA|93
+Teófilo Cubillas/Cubillas|MEI,CA|90
+Valentín Castellanos|MEI|82
+Ángel Di María/Di María|MEI,PE,PD|92
+Manuel Lanzini|MEI|82
+Ever Banega/Banega|MEI|84
+Marco Asensio/Asensio|MEI|84
+Nicolás De la Cruz/De la Cruz|MEI|82
+Nico Paz|MEI|82
+Kenan Yıldız/Yıldız|MEI|82
+Exequiel Palacios/Palacios|MEI|82
+Mário Zagallo/Zagallo|PE|87
+Edu|PE|85
+Denílson|PE|86
+Robinho|PE|88
+Neymar/Neymar Jr|PE,CA|94
+Vinícius Júnior/Vini Jr/Vinicius|PE,CA|93
+Gabriel Martinelli/Martinelli|PE|85
+Everton Cebolinha/Cebolinha|PE|82
+Dudu|PE|82
+Paulo Nunes|PE|82
+Canhoteiro|PE|86
+Éder|PE|88
+Joel|PE|82
+Sávio|PE|82
+Marcelinho Paraíba|PE|82
+Douglas Costa|PE,PD|87
+Rony|PE|82
+Luiz Henrique|PE|82
+Bruno Henrique|PE|82
+Michael|PE|82
+Wellington Rato|PE|82
+Keno|PE|82
+Cristiano Ronaldo/CR7|PE,CA|98
+Franck Ribéry/Ribéry|PE|93
+Sadio Mané/Mané|PE|92
+Eden Hazard/Hazard|PE|93
+Ryan Giggs/Giggs|PE|92
+Marc Overmars/Overmars|PE|88
+David Ginola/Ginola|PE|87
+Robert Pirès/Pirès|PE|89
+Raheem Sterling/Sterling|PE|92
+Leroy Sané/Sané|PE|87
+Kingsley Coman/Coman|PE|86
+Nico Williams|PE|86
+Khvicha Kvaratskhelia/Kvaratskhelia/Kvara|PE|87
+Rafael Leão|PE|87
+Jérémy Doku/Doku|PE|85
+Lorenzo Insigne/Insigne|PE|86
+Pedro Rodríguez|PE|85
+Andrei Arshavin/Arshavin|PE|86
+Nani|PE|85
+Christian Pulisic/Pulisic|PE|85
+Son Heung-min/Son|PE|92
+Wilfried Zaha/Zaha|PE|84
+Alexis Sánchez/Alexis|PE|88
+Cody Gakpo/Gakpo|PE|85
+Ezequiel Lavezzi/Lavezzi|PE|84
+Luis Díaz|PE|87
+Marcus Rashford/Rashford|PE|86
+Jack Grealish/Grealish|PE|85
+Hirving Lozano/Chucky Lozano|PE|84
+Thierry Henry/Henry|PE,CA|95
+Kaoru Mitoma/Mitoma|PE|82
+Ansu Fati/Ansu|PE|82
+Francisco Gento/Gento|PE|91
+Paulo Futre/Futre|PE|87
+Hristo Stoichkov/Stoichkov|PE,CA|93
+Gareth Bale/Bale|PE,PD|93
+Garrincha/Mané Garrincha|PD|96
+Jairzinho|PD|94
+Renato Gaúcho/Renato Portaluppi|PD|88
+Raphinha|PD|87
+Rodrygo|PD|87
+Antony|PD|82
+Willian|PD|86
+Lucas Moura|PD|84
+Hulk|PD|86
+Savinho|PD|84
+Estêvão|PD|83
+Julinho Botelho/Julinho|PD|88
+Dorval|PD|85
+Tita|PD|85
+Luizinho|PD|82
+Luiz Araújo|PD|82
+Luís Figo/Figo|PD|94
+Arjen Robben/Robben|PD|93
+Mohamed Salah/Salah|PD|94
+George Best|PD|94
+Stanley Matthews|PD|91
+Lamine Yamal/Yamal|PD|92
+Bukayo Saka/Saka|PD|87
+Ousmane Dembélé/Dembélé|PD|89
+José Callejón/Callejón|PD|82
+Joaquín|PD|85
+Ricardo Quaresma/Quaresma|PD|85
+Hakim Ziyech/Ziyech|PD|85
+Xherdan Shaqiri/Shaqiri|PD|83
+Takefusa Kubo/Kubo|PD|84
+Andriy Yarmolenko/Yarmolenko|PD|82
+David Beckham/Beckham|PD|89
+Federico Chiesa/Chiesa|PD|85
+Domenico Berardi/Berardi|PD|82
+Bryan Mbeumo/Mbeumo|PD|84
+Mohammed Kudus/Kudus|PD|82
+Michael Olise/Olise|PD|87
+Jadon Sancho/Sancho|PD|84
+Serge Gnabry/Gnabry|PD|85
+Dejan Kulusevski/Kulusevski|PD|84
+Pablo Sarabia/Sarabia|PD|82
+Gonçalo Guedes|PD|82
+Theo Walcott/Walcott|PD|82
+Aaron Lennon/Lennon|PD|82
+Shaun Wright-Phillips|PD|82
+Steve McManaman/McManaman|PD|85
+Thomas Häßler|PD|86
+Pierre Littbarski/Littbarski|PD|86
+Bruno Conti/Conti|PD|87
+Ariel Ortega/Ortega|PD|86
+Claudio Caniggia/Caniggia|PD,CA|87
+Juan Pablo Ángel|PD|82
+Romário|CA|95
+Ronaldo/Ronaldo Fenômeno/Ronaldo Nazário|CA|98
+Adriano/Adriano Imperador|CA|93
+Careca|CA|93
+Roberto Dinamite/Dinamite|CA|92
+Vavá|CA|92
+Arthur Friedenreich/Friedenreich|CA|93
+Leônidas da Silva/Leônidas|CA|93
+Ademir de Menezes/Ademir|CA|93
+Serginho Chulapa|CA|84
+Casagrande|CA|84
+Evair|CA|86
+Washington|CA|85
+Luís Fabiano|CA|87
+Grafite|CA|83
+Jô|CA|82
+Vágner Love|CA|83
+Nilmar|CA|83
+Alexandre Pato/Pato|CA|85
+Leandro Damião/Damião|CA|82
+Gabigol/Gabriel Barbosa|CA|84
+Pedro|CA|84
+Germán Cano/Cano|CA|83
+Yuri Alberto|CA|82
+Jonathan Calleri/Calleri|CA|82
+Roger Guedes|CA|82
+Kaio Jorge|CA|82
+Vitor Roque|CA|82
+Roberto Firmino/Firmino|CA|88
+Gabriel Jesus|CA|87
+Richarlison|CA|84
+Endrick|CA|80
+Márcio Amoroso/Amoroso|CA|86
+Giovane Élber/Élber|CA|88
+Ailton|CA|85
+Mário Jardel/Jardel|CA|88
+Edmundo|CA|89
+Túlio Maravilha/Túlio|CA|84
+Dodô|CA|83
+Viola|CA|83
+França|CA|82
+Nunes|CA|82
+Dadá Maravilha/Dario|CA|83
+Bebeto|CA|93
+Edílson|CA|85
+Deivid|CA|82
+Dagoberto|CA|82
+Borges|CA|82
+Hernán Barcos/Barcos|CA|82
+Ricardo Oliveira|CA|83
+Kléber Gladiador|CA|82
+Obina|CA|82
+Luizão|CA|85
+Marques|CA|83
+Ronaldão|CA|82
+Paulinho McLaren|CA|82
+Sonny Anderson|CA|86
+Elkeson|CA|82
+Diego Tardelli/Tardelli|CA|83
+Baltazar|CA|82
+Zizinho|CA|92
+Heleno de Freitas/Heleno|CA|88
+Eusébio|CA|96
+Ferenc Puskás/Puskás|CA|96
+Gerd Müller|CA|95
+Marco van Basten/Van Basten|CA|96
+Gabriel Batistuta/Batistuta|CA|93
+Hernán Crespo/Crespo|CA|92
+Jürgen Klinsmann/Klinsmann|CA|92
+Karl-Heinz Rummenigge/Rummenigge|CA|93
+Paolo Rossi|CA|92
+Christian Vieri/Vieri|CA|92
+Filippo Inzaghi/Inzaghi/Pippo Inzaghi|CA|89
+Andriy Shevchenko/Shevchenko|CA|93
+George Weah/Weah|CA|93
+Samuel Eto'o/Eto'o|CA|93
+Didier Drogba/Drogba|CA|93
+Zlatan Ibrahimović/Ibrahimović/Zlatan|CA|94
+Robert Lewandowski/Lewandowski|CA|94
+Luis Suárez/Suárez|CA|94
+Edinson Cavani/Cavani|CA|92
+Diego Forlán/Forlán|CA|89
+Sergio Agüero/Agüero/Kun Agüero|CA|93
+Carlos Tévez/Tévez|CA|89
+Gonzalo Higuaín/Higuaín|CA|88
+Lautaro Martínez/Lautaro|CA|88
+Julián Álvarez|CA|87
+Karim Benzema/Benzema|CA|94
+Kylian Mbappé/Mbappé|CA|94
+Erling Haaland/Haaland|CA|94
+Harry Kane/Kane|CA|93
+Gary Lineker/Lineker|CA|92
+Alan Shearer/Shearer|CA|92
+Wayne Rooney/Rooney|CA|93
+Michael Owen/Owen|CA|89
+Ruud van Nistelrooy/Van Nistelrooy|CA|92
+Dennis Bergkamp/Bergkamp|CA|93
+Patrick Kluivert/Kluivert|CA|88
+Raúl/Raúl González|CA|93
+Fernando Torres/Torres|CA|92
+David Villa/Villa|CA|90
+Fernando Morientes/Morientes|CA|86
+Hugo Sánchez|CA|92
+Javier Hernández/Chicharito|CA|85
+Iván Zamorano/Zamorano|CA|87
+Marcelo Salas/Salas|CA|87
+Davor Šuker/Šuker|CA|89
+Mario Kempes/Kempes|CA|93
+Oliver Bierhoff/Bierhoff|CA|86
+Miroslav Klose/Klose|CA|92
+Rudi Völler/Völler|CA|89
+David Trezeguet/Trezeguet|CA|88
+Jean-Pierre Papin/Papin|CA|89
+Eric Cantona/Cantona|CA|92
+Olivier Giroud/Giroud|CA|86
+Victor Osimhen/Osimhen|CA|87
+Dušan Vlahović/Vlahović|CA|85
+Alexander Isak/Isak|CA|87
+Viktor Gyökeres/Gyökeres|CA|87
+Ollie Watkins/Watkins|CA|85
+Darwin Núñez/Darwin|CA|84
+Romelu Lukaku/Lukaku|CA|88
+Edin Džeko/Džeko|CA|86
+Ciro Immobile/Immobile|CA|86
+Álvaro Morata/Morata|CA|85
+Diego Costa|CA|86
+Radamel Falcao/Falcao|CA|92
+Pierre-Emerick Aubameyang/Aubameyang|CA|88
+Mario Mandžukić/Mandžukić|CA|86
+Dirk Kuyt/Kuyt|CA|84
+Robin van Persie/Van Persie|CA|92
+Luca Toni/Toni|CA|86
+Alessandro Del Piero/Del Piero|CA|93
+Henrik Larsson/Larsson|CA|89
+Dwight Yorke/Yorke|CA|86
+Andy Cole|CA|86
+Ian Rush/Rush|CA|89
+Robbie Fowler/Fowler|CA|86
+Jamie Vardy/Vardy|CA|85
+Nwankwo Kanu/Kanu|CA|85
+Roger Milla/Milla|CA|85
+Abedi Pelé|CA|86
+Ahn Jung-hwan|CA|82
+Uwe Seeler/Seeler|CA|93
+Joshua Zirkzee/Zirkzee|CA|82
+Fabio Quagliarella/Quagliarella|CA|84
+Jorge Valdano/Valdano|CA|85
+Yakubu Aiyegbeni/Yakubu|CA|82
+Ian Wright|CA|86
+Paulo Wanchope/Wanchope|CA|82
+Chris Wood|CA|82
+Tony Yeboah/Yeboah|CA|84
+Simone Zaza/Zaza|CA|82
+Antoine Griezmann/Griezmann|CA|92
+Rafael Santos Borré/Borré|CA|82
+Enner Valencia|CA|82
+Salomón Rondón/Rondón|CA|82
+Óscar Cardozo/Cardozo|CA|82
+Roque Santa Cruz/Santa Cruz|CA|82
+Hugo Ekitiké/Ekitiké|CA|84
+Benjamin Šeško/Šeško|CA|84
+Randal Kolo Muani/Kolo Muani|CA|82
+Marcus Thuram|CA|86
+Rasmus Højlund/Højlund|CA|82
+Gianluca Scamacca/Scamacca|CA|82
+Mateo Retegui/Retegui|CA|82
+Lukas Podolski/Podolski|CA|85
+Mario Gómez|CA|85
+Emmanuel Adebayor/Adebayor|CA|84
+Obafemi Martins/Martins|CA|82
+Asamoah Gyan/Gyan|CA|82
+Frédéric Kanouté/Kanouté|CA|84
+Youssef En-Nesyri/En-Nesyri|CA|82
+Mehdi Taremi/Taremi|CA|82
+Ali Daei/Daei|CA|82
+Sardar Azmoun/Azmoun|CA|82
+Kazuyoshi Miura/Kazu Miura|CA|82
+Landon Donovan/Donovan|CA|83
+Clint Dempsey/Dempsey|CA|83
+Carlos Vela/Vela|CA|84
+Raúl Jiménez|CA|83
+Santiago Giménez|CA|82
+Luis Muriel/Muriel|CA|82
+Duván Zapata/Zapata|CA|82
+Gianluca Vialli/Vialli|CA|88
+Roberto Mancini|CA|87
+Valentin Ivanov|CA|86
+Oleg Blokhin/Blokhin|CA|89
+Igor Belanov/Belanov|CA|87
+Grzegorz Lato/Lato|CA|87
+Zbigniew Boniek/Boniek|CA|89
+Kevin Keegan/Keegan|CA|89
+Geoff Hurst/Hurst|CA|87
+Jimmy Greaves/Greaves|CA|89
+Just Fontaine/Fontaine|CA|90
+Sándor Kocsis/Kocsis|CA|93
+Josef Bican/Bican|CA|93
+Luis Artime/Artime|CA|86
+Pedro Rocha|CA|87
+Fernando Morena/Morena|CA|86
+Héctor Scarone/Scarone|CA|89
+Óscar Míguez/Míguez|CA|88
+Juan Alberto Schiaffino/Schiaffino|CA|93
+Alcides Ghiggia/Ghiggia|CA|88
+Arsenio Erico/Erico|CA|89
+Alex Mineiro|CA|82
+Matheus Cunha|CA|85
+Pedro Raul|CA|82
+Kléber Pereira|CA|82
+Juan Fernando Quintero/Quintero|MEI|82
+Quincy Promes/Promes|PE|82
+Quini|CA|82
+Ulises Dávila|MEI|82
+Umar Sadiq|CA|82
+Xisco|CA|82`;
 const POS_NAME = {GOL:"goleiro", LD:"lateral-direito", LE:"lateral-esquerdo", ZAG:"zagueiro", VOL:"volante", MC:"meio-campista", MEI:"meia", PE:"ponta-esquerda", PD:"ponta-direita", CA:"centroavante"};
 const SLOT_OK = {gol:["GOL"], ld:["LD"], le:["LE"], zg1:["ZAG"], zg2:["ZAG"], vol:["VOL","MC"], mc1:["MC","MEI","VOL"], mc2:["MC","MEI","VOL"], pe:["PE","PD"], pd:["PD","PE"], ca:["CA"]};
 const normName = s => (s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
 const PL = [], PALIAS = new Map();
 PDATA.split("\n").forEach((ln,i) => {
-  const [ns, ps] = ln.split("|"); if(!ns) return;
-  const e = { key:"p"+i, names:ns.split("/"), pos:(ps||"").split(",") };
+  const [ns, ps, ov] = ln.split("|"); if(!ns) return;
+  const e = { key:"p"+i, names:ns.split("/"), pos:(ps||"").split(","), ovr:+ov||80 };
   e.norms = e.names.map(normName);
   PL.push(e); e.norms.forEach(n => { if(!PALIAS.has(n)) PALIAS.set(n, e); });
 });
@@ -1146,6 +1152,19 @@ const lookup = name => PALIAS.get(normName(name)) || null;
 const playerKey = name => lookup(name)?.key || "x:" + normName(name);
 const fits = (e, slot) => !!e && e.pos.some(x => SLOT_OK[slot]?.includes(x));
 const posText = e => e.pos.map(x => POS_NAME[x]).join(" / ");
+/* overall na posição: perde 4 em lateral trocado, 8 fora de posição e vai a 45 com goleiro na linha ou jogador de linha no gol */
+const UNKNOWN_OVR = 75;
+function effOvr(e, slot){
+  if(!e) return UNKNOWN_OVR;
+  if(fits(e, slot)) return e.ovr;
+  const isGK = e.pos.includes("GOL");
+  if(slot==="gol" || (isGK && e.pos.length===1)) return 45;
+  if((slot==="ld"||slot==="le") && (e.pos.includes("LD")||e.pos.includes("LE"))) return e.ovr-4;
+  return e.ovr-8;
+}
+const slotOvr = t => t ? (t.v ?? UNKNOWN_OVR) : null;
+function teamOvr(p){ const v=Object.values(p.team||{}).map(slotOvr); return v.length ? Math.round(v.reduce((a,b)=>a+b,0)/v.length) : null; }
+const ovrTier = v => v>=90 ? "t1" : v>=85 ? "t2" : v>=78 ? "t3" : "t4";
 function usedKeys(){ const k=new Set(); for(const id of S.room.order){ const t=S.room.players[id].team||{}; for(const s in t) k.add(playerKey(t[s].n)); } return k; }
 function suggestions(letter, draft, slot){
   const q = normName(draft), used = usedKeys(), out = [];
@@ -1156,23 +1175,34 @@ function suggestions(letter, draft, slot){
     if(best<0) continue;
     out.push({ e, name:e.names[best], fit:fits(e, slot) });
   }
-  out.sort((a,b) => (b.fit-a.fit) || a.name.localeCompare(b.name, "pt"));
+  out.sort((a,b) => (b.fit-a.fit) || (b.e.ovr-a.e.ovr) || a.name.localeCompare(b.name, "pt"));
   return out.slice(0, 8);
 }
 function suggHTML(p){
   const pend=p.pending; if(!pend || !p.aim) return "";
   const list = suggestions(pend.letter, S.ui.draft, p.aim);
   if(!list.length) return `<p class="note" style="margin:0">${S.ui.draft ? "Nenhum jogador da lista com esse começo. Se ele existe, pode escalar assim mesmo." : "Nenhum jogador da lista com essa letra. Se você lembrar de algum, pode escalar assim mesmo."}</p>`;
-  return `<span class="lbl">Sugestões com ${esc(pend.letter)}</span><div class="sugg">${list.map(x=>`<button data-act="sugg" data-n="${esc(x.name)}" class="${x.fit?"fit":""}"><b>${esc(x.name)}</b><small>${x.name!==x.e.names[0]?esc(x.e.names[0])+" · ":""}${esc(posText(x.e))}</small></button>`).join("")}</div>`;
+  return `<span class="lbl">Sugestões com ${esc(pend.letter)}</span><div class="sugg">${list.map(x=>`<button data-act="sugg" data-n="${esc(x.name)}" class="${x.fit?"fit":""}"><b><span class="ovrb ${ovrTier(x.e.ovr)}">${x.e.ovr}</span> ${esc(x.name)}</b><small>${x.name!==x.e.names[0]?esc(x.e.names[0])+" · ":""}${esc(posText(x.e))}</small></button>`).join("")}</div>`;
 }
 function fitHTML(p){
   const name=S.ui.draft.trim(); if(!name || !p.aim) return "";
   const e=lookup(name), lab=POS.find(x=>x.id===p.aim).l;
-  if(!e) return name.length<3 ? "" : `<span class="fit unk">Não está na nossa lista. Vale se a galera concordar.</span>`;
-  return fits(e,p.aim) ? `<span class="fit ok">Joga de ${esc(posText(e))}. Está na posição.</span>` : `<span class="fit off">Joga de ${esc(posText(e))}. Vai ficar fora de posição no ${lab}.</span>`;
+  if(!e) return name.length<3 ? "" : `<span class="fit unk">Não está na nossa lista. Vale se a galera concordar, e entra com overall ${UNKNOWN_OVR}.</span>`;
+  const v=effOvr(e,p.aim);
+  return fits(e,p.aim) ? `<span class="fit ok">Overall ${e.ovr}. Joga de ${esc(posText(e))}, está na posição.</span>` : `<span class="fit off">Overall ${e.ovr}, mas joga de ${esc(posText(e))}. No ${lab} fica com ${v}.</span>`;
 }
 
 /* ---------- stores ---------- */
+function localStore(){
+  let data=null, ls=[];
+  const emit = () => ls.forEach(f => f(clone(data), {fromCache:false}));
+  return {
+    get: async () => clone(data),
+    set: async d => { data = clone(d); emit(); },
+    update: async d => { data = merge(data, clone(d)); emit(); },
+    listen: cb => { ls.push(cb); setTimeout(()=>cb(clone(data),{fromCache:false})); return () => { ls = ls.filter(x=>x!==cb); }; }
+  };
+}
 /* ---------- capabilities ---------- */
 (() => {
   let id = lsGet("ae_pid"); if(!id){ id = "p" + Math.random().toString(36).slice(2,10); lsSet("ae_pid", id); }
@@ -1381,7 +1411,7 @@ async function place(){
   if(owner){ toast(name+" já foi escalado"+(owner===p.name?" no seu time":" pelo "+owner)+". Escolha outro."); return; }
   const posLabel = POS.find(x=>x.id===posId).l;
   const e = lookup(name), ok = e ? fits(e,posId) : null, nm = e ? e.names.find(x=>normName(x)===normName(name)) || name : name;
-  const slot = {n:nm, l:pend.letter, ok};
+  const slot = {n:nm, l:pend.letter, ok, o:e?e.ovr:null, v:effOvr(e,posId)};
   const players = clone(S.room.players); players[id] = {...p, team:{...p.team, [posId]:slot}, pending:null, aim:null};
   await write({ players:{[id]:{ team:{[posId]:slot}, pending:null, aim:null, hand:validCards(p) }}, log:logPatch(p.name+" escalou "+nm+" ("+posLabel+")"+(ok===false?" fora de posição":"")), ...nextTurnPatch(players) });
 }
@@ -1432,7 +1462,7 @@ function rulesHTML(){
   return `<div class="panel rules"><div class="lbl">Como funciona</div><ol>
     <li>Cada jogador tem um quadro com os números de 1 a 26. Atrás deles estão as 26 letras do alfabeto, embaralhadas de um jeito diferente para cada um.</li>
     <li>Na sua vez, <b>escolha primeiro a posição</b> no campo (4-3-3). Depois abra um número: a letra que sair é a inicial do jogador que vai nessa posição.</li>
-    <li>Digite o nome de um jogador de futebol com essa inicial e escale. Não vale repetir jogador: quem já foi escalado por alguém não pode entrar de novo. Vale qualquer nome pelo qual o jogador é conhecido: o Messi entra com M (Messi) ou com L (Lionel ou Leo Messi). O jogo sugere nomes de uma lista com mais de 900 craques e avisa quando alguém vai jogar fora de posição.</li>
+    <li>Digite o nome de um jogador de futebol com essa inicial e escale. Não vale repetir jogador: quem já foi escalado por alguém não pode entrar de novo. Vale qualquer nome pelo qual o jogador é conhecido: o Messi entra com M (Messi) ou com L (Lionel ou Leo Messi). O jogo sugere nomes de uma lista com mais de 900 craques, cada um com o overall do auge da carreira. Fora de posição o jogador perde pontos, e o overall do time é a média dos 11.</li>
     <li>Seis números do quadro trazem, junto com a letra, uma <b>cartinha</b> (2 de cada tipo). Você pode usar na hora ou guardar para a próxima rodada.</li>
     <li><b>Repetir letra</b> deixa você usar uma letra que já usou no seu time. <b>Trocar letra</b> deixa você escolher qualquer letra para a posição. <b>Trocar número</b> descarta a letra que saiu e você sorteia outro número.</li>
     <li>Quando todo mundo completar os 11, os times são comparados posição por posição e cada um vota no melhor time (não vale votar no seu).</li>
@@ -1493,7 +1523,7 @@ function pitchHTML(p, opts={}){
       const t=p.team?.[pos.id], aimed = interactive && p.aim===pos.id;
       const can = interactive && !pend && !t;
       return `<button class="slot ${t?"full":""} ${t&&t.ok===false?"off":""} ${can?"can":""} ${aimed?"aim":""}" ${can?`data-act="aim" data-pos="${pos.id}"`:"disabled"} style="left:${pos.x}%;top:${pos.y}%" aria-pressed="${aimed?"true":"false"}" aria-label="${pos.l}${t?": "+esc(t.n):" vazia"}">
-        ${t?`<span class="lt">${esc(t.l)}</span>`:""}<span class="pos">${pos.l}${t&&t.ok===false?" · fora":""}</span>${t?`<span class="nm">${esc(t.n)}</span>`:""}${aimed && pend?`<span class="nm">${esc(pend.letter)}…</span>`:""}</button>`;
+        ${t?`<span class="lt">${esc(t.l)}</span><span class="ov ${ovrTier(slotOvr(t))}">${slotOvr(t)}</span>`:""}<span class="pos">${pos.l}${t&&t.ok===false?" · fora":""}</span>${t?`<span class="nm">${esc(t.n)}</span>`:""}${aimed && pend?`<span class="nm">${esc(pend.letter)}…</span>`:""}</button>`;
     }).join("")}</div>`;
 }
 function boardHTML(p, mine){
@@ -1550,7 +1580,7 @@ function vGame(){
   ${S.ui.net?`<p class="err">${esc(S.ui.net)}</p>`:""}
   <div class="turn ${myTurn?"mine":""}"><div><div class="lbl">${S.mode==="local"?"Passe o celular para":"Agora é a vez de"}</div><h2>${myTurn && S.mode==="online" ? "Sua vez!" : esc(turnP?.name)}</h2></div>
     ${host && !myTurn ? `<button class="btn ghost" data-act="skip">Pular a vez de ${esc(turnP?.name)}</button>` : ""}</div>
-  <div class="tabs" role="group" aria-label="Times">${r.order.map(id=>{const p=r.players[id];return `<button class="tab" data-act="view" data-id="${id}" aria-pressed="${id===viewId}">${id===r.turn?'<span class="dot"></span>':""}${esc(p.name)}${id===S.me&&S.mode==="online"?" (você)":""} <small>${teamCount(p)}/11</small></button>`;}).join("")}</div>
+  <div class="tabs" role="group" aria-label="Times">${r.order.map(id=>{const p=r.players[id];return `<button class="tab" data-act="view" data-id="${id}" aria-pressed="${id===viewId}">${id===r.turn?'<span class="dot"></span>':""}${esc(p.name)}${id===S.me&&S.mode==="online"?" (você)":""} <small>${teamCount(p)}/11${teamOvr(p)?" · "+teamOvr(p):""}</small></button>`;}).join("")}</div>
   <div class="game">
     <div class="stack">
       <div class="panel stack"><div class="row" style="justify-content:space-between"><span class="lbl">Quadro de ${esc(vp.name)}</span><span class="note">${vp.revealed.length} de 26 abertos</span></div>${boardHTML(vp, viewingMine)}</div>
@@ -1566,13 +1596,15 @@ function vDone(){
   const r=S.room, votes=r.votes||{}, tally={};
   Object.values(votes).forEach(t=>tally[t]=(tally[t]||0)+1);
   const myVote=votes[S.me];
+  const KEYS=["gol","ld","zg1","zg2","le","vol","mc1","mc2","pd","pe","ca"], wins={}, best={};
+  KEYS.forEach(k=>{ const vals=r.order.map(id=>slotOvr(r.players[id].team?.[k])??-1); const m=Math.max(...vals); best[k]=m; if(vals.filter(v=>v===m).length===1){ const w=r.order[vals.indexOf(m)]; wins[w]=(wins[w]||0)+1; } });
   const online=S.mode==="online", host = online ? r.hostId===S.me : true;
   return `<div class="top"><div class="row"><h2 style="font-size:34px">Times escalados</h2></div><button class="btn ghost" data-act="leave">Sair</button></div>
   <p class="note" style="margin:0 0 14px">${online ? (myVote ? "Voto registrado. Dá para mudar até todo mundo votar." : "Qual time ficou melhor? Vote em um time que não seja o seu.") : "Qual time ficou melhor? Decidam aí na resenha."}</p>
-  <div class="teams">${r.order.map(id=>{const p=r.players[id];return `<div class="panel team stack"><div class="row" style="justify-content:space-between"><div><h3>${esc(p.name)}</h3><span class="note">${Object.values(p.team||{}).filter(t=>t.ok!==false).length} de 11 na posição</span></div>${online?`<span class="votes">${tally[id]||0} voto${(tally[id]||0)===1?"":"s"}</span>`:""}</div>
+  <div class="teams">${[...r.order].sort((a,b)=>(teamOvr(r.players[b])||0)-(teamOvr(r.players[a])||0)).map(id=>{const p=r.players[id];return `<div class="panel team stack"><div class="row" style="justify-content:space-between"><div><h3>${esc(p.name)}</h3><span class="note">${Object.values(p.team||{}).filter(t=>t.ok!==false).length} de 11 na posição · venceu ${wins[id]||0} posições</span></div><div class="teamovr ${ovrTier(teamOvr(p)||0)}"><small>OVR</small>${teamOvr(p)??"—"}</div>${online?`<span class="votes">${tally[id]||0} voto${(tally[id]||0)===1?"":"s"}</span>`:""}</div>
     ${pitchHTML(p,{mini:true})}
     ${online && id!==S.me ? `<button class="btn ${myVote===id?"gold":""}" data-act="vote" data-id="${id}">${myVote===id?"Seu voto":"Votar neste time"}</button>`:""}</div>`;}).join("")}</div>
-  <div class="panel stack" style="margin-top:16px"><span class="lbl">Posição por posição</span><div class="cmpwrap"><table class="cmp"><thead><tr><th>Posição</th>${r.order.map(id=>`<th>${esc(r.players[id].name)}</th>`).join("")}</tr></thead><tbody>${["gol","ld","zg1","zg2","le","vol","mc1","mc2","pd","pe","ca"].map(k=>{const pos=POS.find(x=>x.id===k);return `<tr><th>${pos.l}</th>${r.order.map(id=>{const t=r.players[id].team?.[k];return `<td class="${t&&t.ok===false?"offp":""}">${t?esc(t.n):"—"}${t&&t.ok===false?" <small>fora</small>":""}</td>`;}).join("")}</tr>`;}).join("")}</tbody></table></div></div>
+  <div class="panel stack" style="margin-top:16px"><span class="lbl">Posição por posição</span><p class="note" style="margin:0">Em destaque, quem tem o maior overall em cada posição. Fora de posição o jogador perde pontos.</p><div class="cmpwrap"><table class="cmp"><thead><tr><th>Posição</th>${r.order.map(id=>`<th>${esc(r.players[id].name)}</th>`).join("")}</tr></thead><tbody>${KEYS.map(k=>{const pos=POS.find(x=>x.id===k);return `<tr><th>${pos.l}</th>${r.order.map(id=>{const t=r.players[id].team?.[k], v=slotOvr(t);return `<td class="${t&&t.ok===false?"offp":""} ${t&&v===best[k]?"win":""}">${t?`<span class="ovrb ${ovrTier(v)}">${v}</span> ${esc(t.n)}`:"—"}${t&&t.ok===false?" <small>fora</small>":""}</td>`;}).join("")}</tr>`;}).join("")}</tbody></table></div></div>
   ${host ? `<div class="row" style="margin-top:16px"><button class="btn gold" data-act="rematch">Jogar de novo</button></div>` : ""}`;
 }
 
