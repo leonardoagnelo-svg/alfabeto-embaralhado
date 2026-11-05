@@ -2495,7 +2495,7 @@ const CARD_DESC = {
   block:"Escolha até 3 letras que o adversário não pode usar até o fim do jogo.",
   choosepos:"Você escolhe a posição que o adversário vai ter que preencher na próxima vez dele.",
   injury:"Um jogador do adversário perde 10 de overall até o fim da partida.",
-  stealcard:"Pega uma cartinha guardada na mão do adversário. A cartinha roubada fica com você e não vence: use quando quiser.",
+  stealcard:"Pega uma cartinha guardada na mão do adversário. Essa cartinha não vence: fica com você até você usar.",
   skip:"O adversário pula a próxima jogada dele.",
   dey:"Você escolhe o adversário e ele é obrigado a colocar o Deyverson no time, na posição que ele escolher. Se já tiver alguém lá, sai. Só existe um Deyverson por partida: quem tirar primeiro leva."
 };
@@ -2506,7 +2506,7 @@ const CARD_WHEN = {
   pos:"Depois de abrir o número.",
   swap:"Na sua vez.", steal:"Na sua vez.", rob:"Na sua vez.", expel:"Na sua vez.", block:"Na sua vez.", choosepos:"Na sua vez.", injury:"Na sua vez.", stealcard:"Na sua vez.", skip:"Na sua vez.", dey:"Na sua vez."
 };
-const validCards = (p, r=S.room) => (p.hand||[]).filter(c => c.keep || c.r + 1 >= r.round);
+const validCards = (p, r=S.room) => (p.hand||[]).filter(c => c.t==="stealcard" || c.r + 1 >= r.round);
 const hasCard = (p, t) => validCards(p).some(c => c.t===t);
 function useCard(p, t){
   const hand = validCards(p); const i = hand.findIndex(c=>c.t===t);
@@ -2659,8 +2659,8 @@ async function atkDo(k, target, arg){
   } else if(k==="stealcard"){
     const oh=validCards(o); if(!oh.length) return;
     const i=Math.floor(Math.random()*oh.length), c=oh.splice(i,1)[0];
-    pl[id].hand=[...hand, {t:c.t, r:S.room.round, keep:true}]; pl[target]={hand:oh};
-    text=me.name+" usou Roubar cartinha e pegou a "+CARD_NAME[c.t]+" de "+o.name+" (essa não vence: pode usar quando quiser)";
+    pl[id].hand=[...hand, {t:c.t, r:S.room.round}]; pl[target]={hand:oh};
+    text=me.name+" usou Roubar cartinha e pegou a "+CARD_NAME[c.t]+" de "+o.name;
   } else if(k==="dey"){
     if(deyPlaced() || teamCount(o)>=11) return;
     pl[target]={deyPend:{by:id}};
@@ -2856,7 +2856,7 @@ function rulesHTML(){
   <div class="cardhelp">${["repeat","letter","reroll","pos"].map(k=>`<div class="ch"><span class="chi">${CARD_ICONS[k]}</span><div><b>${CARD_NAME[k]}</b><p>${CARD_DESC[k]}</p><small>Quando usar: ${CARD_WHEN[k].toLowerCase()}</small></div></div>`).join("")}</div>
   <div class="lbl" style="margin-top:14px">Cartinhas de ataque (1 de cada)</div>
   <div class="cardhelp">${ATK.map(k=>`<div class="ch"><span class="chi atk">${CARD_ICONS[k]}</span><div><b>${CARD_NAME[k]}</b><p>${CARD_DESC[k]}</p><small>Quando usar: na sua vez, sem gastar a jogada.</small></div></div>`).join("")}</div>
-  <p class="note" style="margin:8px 0 0">Cada cartinha vale na rodada em que saiu e na seguinte. Depois disso, some da sua mão. A exceção é a cartinha que você rouba de um adversário: essa fica com você até você usar. Quem recebe um ataque é avisado na hora.</p>
+  <p class="note" style="margin:8px 0 0">Cada cartinha vale na rodada em que saiu e na seguinte. Depois disso, some da sua mão. A exceção é a Roubar cartinha: ela não vence e fica com você até você usar. Quem recebe um ataque é avisado na hora.</p>
   </details></div>`;
 }
 function vHome(){
@@ -2947,7 +2947,7 @@ function handHTML(p, mine){
   return `<div class="stack" style="gap:8px"><div class="cards">${hand.map(c=>{
     const usable = mine && (isAtk(c.t) ? atkTargets(c.t).length>0 : c.t==="swap" ? teamCount(p)>=2 : c.t==="pos" ? !!pend && teamCount(p)<10 : !!p.aim && (c.t==="reroll" ? !!pend : (c.t==="repeat" ? pastLetters(p).length>0 : true)));
     const act = isAtk(c.t) ? "atk" : c.t==="reroll" ? "cReroll" : "cPick";
-    const exp = c.keep ? "roubada: não vence" : c.r + 1 > r.round ? "vale até a próxima rodada" : "última rodada!";
+    const exp = c.t==="stealcard" ? "não vence: use quando quiser" : c.r + 1 > r.round ? "vale até a próxima rodada" : "última rodada!";
     return `<button class="card ${isAtk(c.t)?"atkcard":""}" ${usable?`data-act="${act}" data-k="${c.t}"`:"disabled"} aria-pressed="${S.ui.pick===c.t?"true":"false"}">${CARD_ICONS[c.t]}<b>${CARD_NAME[c.t]}</b><span class="cdesc">${CARD_DESC[c.t]}</span><small>${exp}</small>${isAtk(c.t) && !usable ? `<small class="why">${!mine ? "Use na sua vez" : "Nenhum adversário pode ser alvo agora"}</small>` : ""}</button>`;
   }).join("")}</div>${picker}${mine?atkHTML(p):""}${(p.blocked||[]).length?`<p class="note" style="margin:0">Letras bloqueadas para você: <b>${p.blocked.join(", ")}</b></p>`:""}</div>`;
 }
