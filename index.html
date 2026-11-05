@@ -2197,8 +2197,10 @@ async function freeLetter(L){
 }
 async function pass(){
   const id=actor(), p=S.room.players[id];
-  const players=clone(S.room.players); players[id]={...p, pending:null, aim:null};
-  await write({ players:{[id]:{pending:null, aim:null}}, log:logPatch(p.name+" passou a vez"+(p.pending?" com a letra "+p.pending.letter:"")), ...nextTurnPatch(players) });
+  if(S.room.turn!==id) return;
+  if((p.passes||0)>=1){ toast("Você já passou a vez nesta partida. Só pode uma vez."); return; }
+  const players=clone(S.room.players); players[id]={...p, pending:null, aim:null, passes:(p.passes||0)+1};
+  await write({ players:{[id]:{pending:null, aim:null, passes:(p.passes||0)+1}}, log:logPatch(p.name+" passou a vez"+(p.pending?" com a letra "+p.pending.letter:"")), ...nextTurnPatch(players) });
 }
 async function skipTurn(){
   const id=S.room.turn, p=S.room.players[id];
@@ -2226,6 +2228,7 @@ function rulesHTML(){
     <li>Digite o nome de um jogador de futebol com essa inicial e escale. Não vale repetir jogador: quem já foi escalado por alguém não pode entrar de novo. Vale qualquer nome pelo qual o jogador é conhecido: o Messi entra com M (Messi) ou com L (Lionel ou Leo Messi). O jogo sugere nomes de uma lista com mais de 1.600 jogadores, cada um com o overall do auge da carreira. Fora de posição o jogador perde pontos, e o overall do time é a média dos 11.</li>
     <li>Seis números do quadro trazem, junto com a letra, uma <b>cartinha</b> (2 de cada tipo). Você pode usar na hora ou guardar para a próxima rodada.</li>
     <li><b>Repetir letra</b> deixa você usar uma letra que já usou no seu time. <b>Trocar letra</b> deixa você escolher qualquer letra para a posição. <b>Trocar número</b> descarta a letra que saiu e você sorteia outro número.</li>
+    <li>Se não lembrar de ninguém, dá para <b>passar a vez</b>, mas só <b>uma vez por partida</b> e você perde a letra.</li>
     <li>Quando todo mundo completar os 11, os times são comparados posição por posição e cada um vota no melhor time (não vale votar no seu).</li>
   </ol></div>`;
 }
@@ -2327,7 +2330,7 @@ function actionHTML(p){
     <div id="sugg" class="stack" style="gap:6px">${suggHTML(p)}</div>
     <button class="btn gold" data-act="place">Escalar no ${lab}</button>
     ${handHTML(p,true)}
-    <button class="btn ghost" data-act="pass">Passar a vez (perde a letra)</button>
+    ${(p.passes||0)>=1 ? '<p class="note" style="margin:0">Você já usou o seu passe nesta partida.</p>' : '<button class="btn ghost" data-act="pass">Passar a vez (perde a letra) · só 1 vez por partida</button>'}
   </div>`;
 }
 function vGame(){
