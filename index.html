@@ -235,6 +235,19 @@ body.withbar{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 .cardsv .g{background:linear-gradient(170deg,var(--gold-hi),var(--gold));color:var(--ink)}.cardsv .o{background:linear-gradient(170deg,#ffb199,#ff6a3d);color:#2a0d04}
 .trophyv{color:var(--gold-hi)}.trophyv svg{width:90px;height:90px}
 
+.nc-bg{position:fixed;inset:0;z-index:45;background:rgba(5,10,8,.78);display:grid;place-items:center;padding:16px}
+.nc{width:min(380px,100%);display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center}
+.nc h2{font-size:34px;color:var(--gold-hi)}
+.ncard{width:220px;min-height:290px;border-radius:18px;padding:22px 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:linear-gradient(165deg,var(--gold-hi),var(--gold) 55%,#c99a33);color:var(--ink);border:2px solid var(--gold-deep);box-shadow:0 0 0 6px rgba(230,184,76,.18),0 20px 50px rgba(0,0,0,.5);animation:ncflip .7s cubic-bezier(.2,.8,.2,1.2)}
+.ncard.atk{background:linear-gradient(165deg,#ffc2ad,#ff6a3d 60%,#d9481f);border-color:#a63a1c;box-shadow:0 0 0 6px rgba(255,106,61,.2),0 20px 50px rgba(0,0,0,.5)}
+.ncard b{font-family:var(--f-display);font-size:26px;font-weight:400;text-transform:uppercase;line-height:1.05}
+.ncard p{margin:0;font-size:15px;font-weight:600}
+.ncard small{font-size:12px;opacity:.8}
+.ncico svg{width:64px;height:64px}
+@keyframes ncflip{0%{transform:perspective(600px) rotateY(90deg) scale(.6);opacity:0}100%{transform:none;opacity:1}}
+.cardbtn.pulse{animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 8px rgba(230,184,76,.35)}}
+@media (prefers-reduced-motion:reduce){.ncard,.cardbtn.pulse{animation:none}}
 .sugg{display:flex;flex-wrap:wrap;gap:6px}
 .sugg button{border:1px solid #2c4a3a;background:var(--panel2);border-radius:9px;padding:6px 10px;text-align:left;display:flex;flex-direction:column;line-height:1.15;max-width:100%}
 .sugg button b{font-weight:700;font-size:14px}
@@ -2108,7 +2121,7 @@ function subscribe(){
     else if(data.status==="playing") S.screen="game";
     else if(data.status==="done") S.screen="done";
     setTimeout(scheduleBot, 0);
-    if(prevTurn !== data.turn){ S.ui.pick=null; S.ui.swapA=null; S.ui.atk=null; S.ui.draft=""; if(S.mode==="local") S.view=null; }
+    if(prevTurn !== data.turn){ S.ui.newCard=null; S.ui.pick=null; S.ui.swapA=null; S.ui.atk=null; S.ui.draft=""; if(S.mode==="local") S.view=null; }
     render();
   }, e => { S.ui.net = "A conexão com a sala caiu. Saia e entre de novo."; render(); });
 }
@@ -2404,10 +2417,10 @@ async function reveal(idx){
   if(c) patch.hand = [...validCards(p), {t:c, r:S.room.round}];
   if(isBlocked){
     await write({ players:{[id]:patch}, log:logPatch(p.name+" abriu o nº "+(idx+1)+", mas a letra "+L+" está bloqueada. Abre outro número."+(c?" Ganhou a cartinha "+CARD_NAME[c]+".":"")) });
-    if(!S.botActing) showEvt("Letra bloqueada", "A letra "+L+" foi bloqueada por um adversário. Abra outro número.", "block", "atk"); return;
+    if(!S.botActing){ if(c){ S.ui.newCard={t:c, blocked:L}; S.ui.pulse=true; render(); } else showEvt("Letra bloqueada", "A letra "+L+" foi bloqueada por um adversário. Abra outro número.", "block", "atk"); } return;
   }
   await write({ players:{[id]:patch}, log:logPatch(p.name+" abriu o nº "+(idx+1)+" e tirou a letra "+L+(c?" e a cartinha "+CARD_NAME[c]+"!":"")) });
-  if(c && !S.botActing) showEvt("Você ganhou a cartinha "+CARD_NAME[c]+"!", CARD_DESC[c]+" Ela está no botão Cartinhas, embaixo, e vale nesta rodada e na próxima.", c, isAtk(c)?"atk":"help");
+  if(c && !S.botActing){ S.ui.newCard={t:c}; S.ui.pulse=true; render(); }
 }
 function whoHas(name){
   const k=playerKey(name);
@@ -2652,7 +2665,7 @@ function render(){
   const a=document.activeElement, keep = a && a.id ? {id:a.id, s:a.selectionStart, e:a.selectionEnd} : null;
   const app=document.getElementById("app");
   app.innerHTML = S.screen==="mural" ? vMural() : S.screen==="home" ? vHome() : S.screen==="local" ? vLocal() : S.screen==="lobby" ? vLobby() : S.screen==="game" ? vGame() : vDone();
-  app.insertAdjacentHTML("beforeend", evtHTML() + onbHTML());
+  app.insertAdjacentHTML("beforeend", evtHTML() + newCardHTML() + onbHTML());
   document.body.classList.toggle("withbar", !!app.querySelector(".cardbar"));
   if(keep){ const el=document.getElementById(keep.id); if(el){ el.focus(); try{ if(keep.s!=null) el.setSelectionRange(keep.s,keep.e); }catch(e){} } }
 }
@@ -2806,12 +2819,22 @@ function actionHTML(p){
 function cardbarHTML(p, mine){
   const hand=validCards(p); if(!p) return "";
   const atk=hand.filter(c=>isAtk(c.t)).length;
-  return `<div class="cardbar"><button class="btn cardbtn" data-act="sheet" ${hand.length?"":"disabled"}><span class="cardicon">${CARD_ICONS.letter}</span>Cartinhas <b>${hand.length}</b>${atk?` <span class="atkdot">${atk} de ataque</span>`:""}</button>
+  return `<div class="cardbar"><button class="btn cardbtn ${S.ui.pulse&&hand.length?"pulse":""}" data-act="sheet" ${hand.length?"":"disabled"}><span class="cardicon">${CARD_ICONS.letter}</span>Cartinhas <b>${hand.length}</b>${atk?` <span class="atkdot">${atk} de ataque</span>`:""}</button>
     <span class="note cardhint">${!hand.length ? "Alguns números trazem cartinhas." : mine ? "Toque para ver e usar." : "Você pode usar na sua vez."}</span></div>`;
 }
 function sheetHTML(p, mine){
   if(!S.ui.sheet) return "";
   return `<div class="sheet-bg" data-act="sheetClose"></div><div class="sheet" role="dialog" aria-label="Suas cartinhas"><div class="row" style="justify-content:space-between"><h3 style="font-size:24px">Suas cartinhas</h3><button class="btn ghost" data-act="sheetClose">Fechar</button></div>${handHTML(p, mine)}</div>`;
+}
+function newCardHTML(){
+  const n=S.ui.newCard; if(!n || S.screen!=="game") return "";
+  const atk=isAtk(n.t), p=S.room?.players?.[actor()];
+  return `<div class="nc-bg" role="dialog" aria-label="Você ganhou uma cartinha"><div class="nc">
+    <span class="lbl">${n.blocked ? "A letra "+esc(n.blocked)+" estava bloqueada, mas veio cartinha!" : "Junto com a letra veio…"}</span>
+    <h2>Você ganhou uma cartinha!</h2>
+    <div class="ncard ${atk?"atk":""}"><span class="ncico">${CARD_ICONS[n.t]}</span><b>${CARD_NAME[n.t]}</b><p>${CARD_DESC[n.t]}</p><small>${atk?"Cartinha de ataque":"Cartinha de ajuda"} · vale nesta rodada e na próxima</small></div>
+    <div class="row" style="width:100%;justify-content:center"><button class="btn" data-act="ncKeep">Guardar</button><button class="btn gold" data-act="ncUse">Ver minhas cartinhas</button></div>
+  </div></div>`;
 }
 function evtHTML(){
   const e=S.ui.evt; if(!e) return "";
@@ -2904,7 +2927,9 @@ async function act(a, d={}){
       case "join": S.ui.err=""; return joinRoom();
       case "toLocal": S.screen="local"; S.ui.err=""; return render();
       case "muralOpen": return openMural(d.id);
-      case "sheet": S.ui.sheet=true; return render();
+      case "sheet": S.ui.sheet=true; S.ui.pulse=false; return render();
+      case "ncKeep": S.ui.newCard=null; return render();
+      case "ncUse": S.ui.newCard=null; S.ui.sheet=true; S.ui.pulse=false; return render();
       case "sheetClose": S.ui.sheet=false; S.ui.atk=null; if(S.ui.pick!=="pos") S.ui.pick=null; return render();
       case "evtClose": S.ui.evt=null; return render();
       case "cancelPick": S.ui.pick=null; return render();
