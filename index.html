@@ -69,6 +69,7 @@ input::placeholder{color:#6f8a79}
 .btn .bi{width:22px;height:22px}
 .twobtn{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .twobtn .btn{padding:11px 8px}
+a.btn.invbtn{display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none}
 .home-grid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:20px}
 @media (min-width:820px){.home-grid{grid-template-columns:1.1fr .9fr;align-items:start}}
 .rules ol{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:6px;max-width:62ch}
@@ -2329,7 +2330,7 @@ async function joinRoom(){
   const room = await readRetained(mq, code, 6000);
   if(!room){ try{mq.end(true);}catch(e){} mq=null; S.ui.err="Não encontrei a sala "+code+". Confira o código com o anfitrião."; return render(); }
   if(room.hostId===S.me){ /* o anfitrião voltou: retoma a sala de onde parou */
-    store=hostStore(mq, code, room); S.code=code; S.ui.err=""; subscribe(); return;
+    store=hostStore(mq, code, room); S.code=code; S.ui.err=""; S.ui.invite=null; if(location.search) history.replaceState(null,"",location.pathname+location.hash); subscribe(); return;
   }
   store = guestStore(mq, code, room);
   if(!room.players?.[S.me]){
@@ -2340,7 +2341,7 @@ async function joinRoom(){
     const fine = await waitFor(()=>ok, 8000); un();
     if(!fine){ try{mq.end(true);}catch(e){} mq=null; S.ui.err="O anfitrião não respondeu. Ele precisa estar com o jogo aberto na tela."; return render(); }
   }
-  S.code=code; S.ui.err=""; subscribe();
+  S.code=code; S.ui.err=""; S.ui.invite=null; if(location.search) history.replaceState(null,"",location.pathname+location.hash); subscribe();
 }
 
 /* ---------- mural de times (24h, votação aberta) ---------- */
@@ -2859,7 +2860,27 @@ function rulesHTML(){
   <p class="note" style="margin:8px 0 0">Cada cartinha vale na rodada em que saiu e na seguinte. Depois disso, some da sua mão. A exceção é a Roubar cartinha: ela não vence e fica com você até você usar. Quem recebe um ataque é avisado na hora.</p>
   </details></div>`;
 }
+const inviteURL = code => location.origin + location.pathname + "?sala=" + code;
+const inviteText = code => "Bora jogar Artilhetra comigo? Entra na minha sala: " + inviteURL(code);
+function vHomeInvite(){
+  const online = !!window.mqtt, code=S.ui.invite;
+  return `<header class="hero"><h1>${titleHTML()}</h1>
+    <p class="tag">Você foi convidado para uma partida. Coloque seu nome e entre na sala.</p></header>
+  <div class="home-grid">
+    <div class="panel stack play">
+      <div class="row" style="justify-content:space-between;align-items:center"><span class="lbl">Sala</span><span class="code">${esc(code)}</span></div>
+      <label class="stack" style="gap:6px"><span class="lbl">Seu nome no jogo</span>
+        <input id="name" maxlength="18" placeholder="Ex.: Igão" value="${esc(S.ui.name)}" autocomplete="nickname"></label>
+      ${!online ? '<p class="note">Carregando o modo online… Se demorar, recarregue a página.</p>' : ''}
+      <button class="btn gold big" data-act="join" ${online?"":"disabled"}><svg class="bi" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l13 8-13 8z" fill="currentColor"/></svg>Entrar na sala</button>
+      <div class="err" role="alert">${esc(S.ui.err)}</div>
+      <button class="btn ghost" data-act="noInvite">Não, quero jogar outra coisa</button>
+    </div>
+    ${rulesHTML()}
+  </div>`;
+}
 function vHome(){
+  if(S.ui.invite) return vHomeInvite();
   const online = !!window.mqtt;
   return `<header class="hero"><h1>${titleHTML()}</h1>
     <p class="tag">Saiu a letra, chuta o craque. Monte seu time com as letras escondidas no quadro e prove que entende de bola.</p></header>
@@ -2900,7 +2921,11 @@ function vLobby(){
   ${S.ui.net?`<p class="err">${esc(S.ui.net)}</p>`:""}
   <div class="home-grid">
     <div class="panel stack">
-      <div><h2 style="font-size:30px">Esperando a galera</h2><p class="note" style="margin:6px 0 0">Passe o código <b>${esc(r.code)}</b> para os amigos. Eles abrem esta mesma página, colocam o nome e entram.</p></div>
+      <div><h2 style="font-size:30px">Esperando a galera</h2><p class="note" style="margin:6px 0 0">Mande o link para os amigos: eles abrem, colocam o nome e já entram na sala. Se preferir, eles também podem digitar o código <b>${esc(r.code)}</b> na página inicial.</p></div>
+      <div class="stack" style="gap:8px">
+        <a class="btn gold invbtn" href="https://wa.me/?text=${encodeURIComponent(inviteText(r.code))}" target="_blank" rel="noopener"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21l1.7-5A8.5 8.5 0 1 1 8 19.3z"/></svg>Convidar pelo WhatsApp</a>
+        <div class="row twobtn"><button class="btn" data-act="shareInvite">Compartilhar link</button><button class="btn" data-act="copyInvite">Copiar link</button></div>
+      </div>
       <ul class="plist">${ids.map(id=>`<li><span>${esc(r.players[id].name)}${id===S.me?" (você)":""}${r.players[id].bot?` <span class="lbl">robô ${BOT_LEVEL[r.players[id].level]||""}</span>`:""}</span>${id===r.hostId?'<span class="lbl">anfitrião</span>':""}${host && r.players[id].bot?`<button class="btn ghost" data-act="rmBotRoom" data-id="${id}">Remover</button>`:""}</li>`).join("")}</ul>
       ${host ? `<div class="stack" style="gap:6px"><span class="lbl">Ajuda para escalar</span><div class="seg">${[["off","Sem dicas"],["auto","Autocompletar"],["full","Sugestões"]].map(([k,v])=>`<button data-act="hintsRoom" data-v="${k}" aria-pressed="${(r.hints||"auto")===k}">${v}</button>`).join("")}</div><p class="note" style="margin:0">${({off:"Ninguém vê nomes: cada um tem que lembrar e digitar.",auto:"Os nomes aparecem só depois de digitar 3 letras.",full:"Mostra sugestões de jogadores assim que a letra sai."})[(r.hints||"auto")]}</p></div>` : `<p class="note" style="margin:0">Ajuda para escalar: <b>${({off:"Sem dicas",auto:"Autocompletar",full:"Sugestões"})[r.hints||"auto"]}</b></p>`}
       ${host ? `<div class="stack" style="gap:6px"><span class="lbl">Adicionar robô</span><div class="row">${Object.entries(BOT_LEVEL).map(([k,v])=>`<button class="btn" data-act="addBotRoom" data-l="${k}">Robô ${v}</button>`).join("")}</div><p class="note" style="margin:0">Os robôs jogam pelo seu celular, então deixe o jogo aberto até o fim.</p></div>` : ""}
@@ -3089,6 +3114,9 @@ async function act(a, d={}){
     switch(a){
       case "create": S.ui.err=""; return createRoom();
       case "join": S.ui.err=""; return joinRoom();
+      case "noInvite": S.ui.invite=null; S.ui.joinCode=""; S.ui.err=""; history.replaceState(null,"",location.pathname); return render();
+      case "copyInvite": { const u=inviteURL(S.room.code); try{ await navigator.clipboard.writeText(u); toast("Link copiado! Cole no grupo da galera."); }catch(e){ prompt("Copie o link da sala:", u); } return; }
+      case "shareInvite": { const u=inviteURL(S.room.code); if(navigator.share){ try{ await navigator.share({title:"Artilhetra", text:"Bora jogar Artilhetra comigo? Entra na minha sala:", url:u}); }catch(e){} } else { try{ await navigator.clipboard.writeText(u); toast("Link copiado! Cole no grupo da galera."); }catch(e){ prompt("Copie o link da sala:", u); } } return; }
       case "toLocal": S.screen="local"; S.ui.err=""; return render();
       case "muralOpen": return openMural(d.id);
       case "sheet": S.ui.sheet=true; S.ui.pulse=false; return render();
@@ -3143,7 +3171,8 @@ async function act(a, d={}){
   }catch(e){ console.error(e); }
 }
 window.addEventListener("mqtt-ready", ()=>{ if(S.screen==="home") render(); });
-if(!lsGet("ae_onb") && !/^#mural/.test(location.hash)) S.ui.onb=0;
+{ const sala=(new URLSearchParams(location.search).get("sala")||"").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,4); if(sala.length===4){ S.ui.invite=sala; S.ui.joinCode=sala; } }
+if(!lsGet("ae_onb") && !/^#mural/.test(location.hash) && !S.ui.invite) S.ui.onb=0;
 render();
 if(/^#mural/.test(location.hash)) openMural(location.hash.slice(7)||null);
 window.addEventListener("hashchange", ()=>{ if(/^#mural/.test(location.hash)) openMural(location.hash.slice(7)||null); });
