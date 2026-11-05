@@ -130,6 +130,12 @@ input::placeholder{color:#6f8a79}
 .teamovr{font-family:var(--f-display);font-size:30px;line-height:1;border-radius:10px;padding:6px 10px;text-align:center;display:flex;flex-direction:column}
 .teamovr small{font-family:var(--f-label);font-size:10px;letter-spacing:.1em}
 .cmp td.win{background:rgba(95,211,141,.12);font-weight:700}
+.atkcard{background:linear-gradient(170deg,#ffb199,#ff6a3d)!important;border-color:#a63a1c!important;color:#2a0d04!important}
+.chi.atk{background:linear-gradient(170deg,#ffb199,#ff6a3d)}
+.atkbox{border:1px solid var(--flag);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;background:rgba(255,106,61,.08)}
+.atkbox .btn{text-align:left}
+.letters button.on{background:var(--flag);color:#fff;border-color:var(--flag)}
+.letters button:disabled{opacity:.3}
 .cdesc{font-size:11.5px;line-height:1.2;font-weight:500;padding:0 6px}
 .card{min-height:0;padding:10px 6px}
 .cardhelp{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:10px;margin-top:8px}
@@ -182,6 +188,13 @@ const POS = [
   {id:"gol",l:"GOL",x:50,y:90}
 ];
 const CARD_ICONS = {
+  steal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>',
+  expel:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="3" width="10" height="16" rx="2" fill="currentColor" opacity=".35"/><rect x="7" y="3" width="10" height="16" rx="2"/></svg>',
+  block:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>',
+  choosepos:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>',
+  injury:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="8" width="18" height="8" rx="4" transform="rotate(-45 12 12)"/><path d="M10 12h4M12 10v4"/></svg>',
+  stealcard:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="10" height="14" rx="2"/><path d="M14 13h7M18 10l3 3-3 3"/></svg>',
+  skip:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l9 7-9 7z"/><path d="M18 5v14"/></svg>',
   pos:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="17" r="2.5"/><circle cx="18" cy="7" r="2.5"/><path d="M8.5 15.5 15.5 8.5"/><path d="M12 8h3.5v3.5"/></svg>',
   swap:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="6" r="2.5"/><circle cx="17" cy="18" r="2.5"/><path d="M4 21v-1a3 3 0 0 1 3-3h1"/><path d="M20 3v1a3 3 0 0 1-3 3h-1"/><path d="M11 14l3-3M14 14V11h-3"/></svg>',
   reroll:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/></svg>',
@@ -197,7 +210,7 @@ let capsDone=false, store=null, unsub=null, netTimer=null;
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const clone = o => o == null ? o : JSON.parse(JSON.stringify(o));
 const isObj = v => v && typeof v === "object" && !Array.isArray(v);
-function merge(a, b){ if(!isObj(a)) a = {}; const out = {...a}; for(const k in b){ out[k] = isObj(b[k]) && isObj(a[k]) ? merge(a[k], b[k]) : b[k]; } return out; }
+function merge(a, b){ if(!isObj(a)) a = {}; const out = {...a}; for(const k in b){ if(b[k]===null){ delete out[k]; continue; } out[k] = isObj(b[k]) && isObj(a[k]) ? merge(a[k], b[k]) : b[k]; } return out; }
 function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 const firstLetter = s => (s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toUpperCase().replace(/[^A-Z]/g,"").charAt(0);
 const teamCount = p => Object.keys(p?.team||{}).length;
@@ -1995,11 +2008,12 @@ function subscribe(){
     if(!meta?.fromCache){ clearTimeout(netTimer); S.ui.net=""; }
     if(!data){ return; }
     const prevTurn = S.room?.turn;
+    const la = data.lastAtk; if(la && la.at!==S.ui.seenAtk){ S.ui.seenAtk=la.at; if(S.mode==="online" && la.to===S.me && Date.now()-la.at<60000) setTimeout(()=>toast("Contra você! "+la.text), 50); }
     S.room = data;
     if(data.status==="lobby") S.screen="lobby";
     else if(data.status==="playing") S.screen="game";
     else if(data.status==="done") S.screen="done";
-    if(prevTurn !== data.turn){ S.ui.pick=null; S.ui.swapA=null; S.ui.draft=""; if(S.mode==="local") S.view=null; }
+    if(prevTurn !== data.turn){ S.ui.pick=null; S.ui.swapA=null; S.ui.atk=null; S.ui.draft=""; if(S.mode==="local") S.view=null; }
     render();
   }, e => { S.ui.net = "A conexão com a sala caiu. Saia e entre de novo."; render(); });
 }
@@ -2123,8 +2137,8 @@ function buildStart(room){
   const order = shuffle(ids);
   ids.forEach(id => {
     const board = shuffle(AL.split(""));
-    const cards = Array(26).fill(""), types = shuffle(["repeat","repeat","letter","letter","reroll","reroll","pos","pos"]);
-    shuffle([...Array(26).keys()]).slice(0,8).forEach((i,k) => cards[i] = types[k]);
+    const cards = Array(26).fill(""), types = shuffle(["repeat","repeat","letter","letter","reroll","reroll","pos","pos","steal","expel","block","choosepos","injury","stealcard","skip"]);
+    shuffle([...Array(26).keys()]).slice(0,types.length).forEach((i,k) => cards[i] = types[k]);
     r.players[id] = { name:r.players[id].name, joinedAt:r.players[id].joinedAt, board, cards, revealed:[], team:{}, hand:[], aim:null, pending:null };
   });
   Object.assign(r, { status:"playing", order, turn:order[0], round:1, votes:{}, log:[{t:Date.now(), text:"Começou! "+r.players[order[0]].name+" abre a partida."}] });
@@ -2142,27 +2156,39 @@ function leave(){ if(mq){ try{mq.end(true);}catch(e){} mq=null; } if(unsub) unsu
 const actor = () => S.mode==="local" ? S.room.turn : S.me;
 function logPatch(text){ return [...(S.room.log||[]), {t:Date.now(), text}].slice(-30); }
 function nextTurnPatch(players){
-  const r=S.room, order=r.order, i=order.indexOf(r.turn);
+  const r=S.room, order=r.order, i=order.indexOf(r.turn), skipped=[];
   for(let k=1;k<=order.length;k++){
     const cand = order[(i+k)%order.length];
-    if(teamCount(players[cand])<11){ return { turn:cand, round: r.round + ((i+k)>=order.length ? 1 : 0) }; }
+    if(teamCount(players[cand])<11){
+      if(r.skips?.[cand] && order.filter(x=>teamCount(players[x])<11).length>1){ skipped.push(cand); continue; }
+      const out={ turn:cand, round: r.round + ((i+k)>=order.length ? 1 : 0) };
+      if(skipped.length) out.skips = Object.fromEntries(skipped.map(x=>[x,null]));
+      return out;
+    }
   }
   return { status:"done", turn:null };
 }
-const CARD_NAME = {repeat:"Repetir letra", letter:"Trocar letra", reroll:"Trocar número", pos:"Trocar posição", swap:"Trocar jogadores"};
+const CARD_NAME = {repeat:"Repetir letra", letter:"Trocar letra", reroll:"Trocar número", pos:"Trocar posição", swap:"Trocar jogadores", steal:"Roubar jogador", expel:"Expulsão", block:"Bloquear letras", choosepos:"Escolher a posição", injury:"Lesão", stealcard:"Roubar cartinha", skip:"Perde a vez"};
 const CARD_DESC = {
   repeat:"Troca a letra da vez por uma letra que você já usou no seu time.",
   letter:"Você escolhe qualquer letra do alfabeto para a posição.",
   reroll:"Descarta a letra que saiu e você abre outro número.",
   pos:"Leva a letra que saiu para outra posição vazia do campo.",
-  swap:"Troca dois jogadores do seu time de lugar."
+  swap:"Troca dois jogadores do seu time de lugar.",
+  steal:"Troca um jogador seu por um do adversário na mesma posição.",
+  expel:"Tira um jogador do time do adversário. Ele vai ter que escalar a posição de novo.",
+  block:"Escolha até 3 letras que o adversário não pode usar até o fim do jogo.",
+  choosepos:"Você escolhe a posição que o adversário vai ter que preencher na próxima vez dele.",
+  injury:"Um jogador do adversário perde 10 de overall até o fim da partida.",
+  stealcard:"Pega uma cartinha guardada na mão do adversário.",
+  skip:"O adversário pula a próxima jogada dele."
 };
 const CARD_WHEN = {
   repeat:"Depois de escolher a posição.",
   letter:"Depois de escolher a posição.",
   reroll:"Depois de abrir o número.",
   pos:"Depois de abrir o número.",
-  swap:"Na sua vez."
+  swap:"Na sua vez.", steal:"Na sua vez.", expel:"Na sua vez.", block:"Na sua vez.", choosepos:"Na sua vez.", injury:"Na sua vez.", stealcard:"Na sua vez.", skip:"Na sua vez."
 };
 const validCards = (p, r=S.room) => (p.hand||[]).filter(c => c.r + 1 >= r.round);
 const hasCard = (p, t) => validCards(p).some(c => c.t===t);
@@ -2174,6 +2200,7 @@ async function setAim(posId){
   const id=actor(), p=S.room.players[id];
   if(S.room.turn!==id || p.pending) return;
   if(p.team[posId]) return;
+  if(p.forced){ toast("Um adversário escolheu a sua posição desta vez. Você tem que escalar o "+POS.find(x=>x.id===p.aim).l+"."); return; }
   S.ui.draft="";
   await write({ players:{[id]:{ aim:posId }} });
 }
@@ -2182,8 +2209,13 @@ async function reveal(idx){
   if(S.room.turn!==id || p.pending || p.revealed.includes(idx)) return;
   if(!p.aim){ toast("Escolha primeiro a posição no campo."); return; }
   const L=p.board[idx], c=(p.cards||[])[idx], revealed=[...p.revealed, idx];
-  const patch = { revealed, pending:{letter:L, idx} };
+  const isBlocked = (p.blocked||[]).includes(L);
+  const patch = isBlocked ? { revealed } : { revealed, pending:{letter:L, idx} };
   if(c) patch.hand = [...validCards(p), {t:c, r:S.room.round}];
+  if(isBlocked){
+    await write({ players:{[id]:patch}, log:logPatch(p.name+" abriu o nº "+(idx+1)+", mas a letra "+L+" está bloqueada. Abre outro número."+(c?" Ganhou a cartinha "+CARD_NAME[c]+".":"")) });
+    toast("A letra "+L+" está bloqueada para você. Abra outro número."); return;
+  }
   await write({ players:{[id]:patch}, log:logPatch(p.name+" abriu o nº "+(idx+1)+" e tirou a letra "+L+(c?" e a cartinha "+CARD_NAME[c]+"!":"")) });
   if(c) toast("Você ganhou a cartinha "+CARD_NAME[c]+": "+CARD_DESC[c]+" Vale nesta rodada e na próxima.");
 }
@@ -2204,7 +2236,7 @@ async function place(){
   const e = lookup(name), ok = e ? fits(e,posId) : null, nm = e ? e.names.find(x=>normName(x)===normName(name)) || name : name;
   const slot = {n:nm, l:pend.letter, ok, a:adapted(e,posId), o:e?e.ovr:null, v:effOvr(e,posId)};
   const players = clone(S.room.players); players[id] = {...p, team:{...p.team, [posId]:slot}, pending:null, aim:null};
-  await write({ players:{[id]:{ team:{[posId]:slot}, pending:null, aim:null, hand:validCards(p) }}, log:logPatch(p.name+" escalou "+nm+" ("+posLabel+")"+(ok===false?" fora de posição":"")), ...nextTurnPatch(players) });
+  await write({ players:{[id]:{ team:{[posId]:slot}, pending:null, aim:null, forced:null, hand:validCards(p) }}, log:logPatch(p.name+" escalou "+nm+" ("+posLabel+")"+(ok===false?" fora de posição":"")), ...nextTurnPatch(players) });
 }
 async function cardReroll(){
   const id=actor(), p=S.room.players[id];
@@ -2216,6 +2248,7 @@ async function cardPick(kind, L){
   const id=actor(), p=S.room.players[id];
   if(!p.aim) return;
   if(kind==="repeat" && !pastLetters(p).includes(L)) return;
+  if((p.blocked||[]).includes(L)){ toast("A letra "+L+" está bloqueada para você."); return; }
   const hand=useCard(p, kind); if(!hand) return;
   S.ui.pick=null;
   const lab=POS.find(x=>x.id===p.aim).l;
@@ -2229,7 +2262,7 @@ async function cardPos(posId){
   const from=POS.find(x=>x.id===p.aim)?.l||"", to=POS.find(x=>x.id===posId).l;
   await write({ players:{[id]:{ aim:posId, hand }}, log:logPatch(p.name+" usou Trocar posição: a letra "+p.pending.letter+" saiu do "+from+" e foi para o "+to) });
 }
-function slotFor(t, posId){ const e=lookup(t.n); return {...t, ok:e?fits(e,posId):null, a:adapted(e,posId), v:effOvr(e,posId)}; }
+function slotFor(t, posId){ const e=lookup(t.n); return {...t, ok:e?fits(e,posId):null, a:adapted(e,posId), v:effOvr(e,posId)-(t.inj?10:0)}; }
 async function cardSwap(posId){
   const id=actor(), p=S.room.players[id];
   if(S.room.turn!==id || !p.team[posId]) return;
@@ -2241,6 +2274,79 @@ async function cardSwap(posId){
   const la=POS.find(x=>x.id===a).l, lb=POS.find(x=>x.id===b).l;
   await write({ players:{[id]:{ team:{[a]:slotFor(tb,a), [b]:slotFor(ta,b)}, hand }}, log:logPatch(p.name+" usou Trocar jogadores: "+ta.n+" foi para o "+lb+" e "+tb.n+" para o "+la) });
 }
+/* ---------- cartinhas de ataque ---------- */
+const ATK = ["steal","expel","block","choosepos","injury","stealcard","skip"];
+const isAtk = t => ATK.includes(t);
+const others = () => S.room.order.filter(x => x!==actor());
+const pname = id => S.room.players[id]?.name || "?";
+function atkTargets(k){
+  const me=S.room.players[actor()];
+  return others().filter(id => { const o=S.room.players[id];
+    if(k==="steal") return POS.some(x => o.team?.[x.id] && me.team?.[x.id]);
+    if(k==="expel" || k==="injury") return teamCount(o)>0 && (k!=="injury" || Object.values(o.team).some(t=>!t.inj));
+    if(k==="choosepos") return teamCount(o)<11 && !o.forced;
+    if(k==="stealcard") return validCards(o).length>0;
+    if(k==="block") return (o.blocked||[]).length < 26;
+    return teamCount(o)<11;
+  });
+}
+function atkNote(to, text){ return { lastAtk:{to, text, at:Date.now()} }; }
+async function atkDo(k, target, arg){
+  const id=actor(), me=S.room.players[id], o=S.room.players[target];
+  if(S.room.turn!==id || !o) return;
+  const hand=useCard(me, k); if(!hand) return;
+  S.ui.atk=null;
+  let pl={[id]:{hand}}, extra={}, text="";
+  if(k==="steal"){
+    const mine=me.team[arg], his=o.team[arg]; if(!mine||!his) return;
+    pl[id].team={[arg]:{...slotFor(his,arg)}}; pl[target]={team:{[arg]:{...slotFor(mine,arg)}}};
+    text=me.name+" usou Roubar jogador: pegou "+his.n+" de "+o.name+" e mandou "+mine.n+" no lugar ("+POS.find(x=>x.id===arg).l+")";
+  } else if(k==="expel"){
+    const t=o.team[arg]; if(!t) return;
+    pl[target]={team:{[arg]:null}};
+    text=me.name+" usou Expulsão: "+t.n+" ("+POS.find(x=>x.id===arg).l+") foi expulso do time de "+o.name;
+  } else if(k==="injury"){
+    const t=o.team[arg]; if(!t) return;
+    pl[target]={team:{[arg]:{inj:true, v:(t.v ?? UNKNOWN_OVR)-10}}};
+    text=me.name+" usou Lesão: "+t.n+", de "+o.name+", perdeu 10 de overall";
+  } else if(k==="block"){
+    const L=[...new Set(arg)].slice(0,3); if(!L.length) return;
+    pl[target]={blocked:[...new Set([...(o.blocked||[]), ...L])]};
+    text=me.name+" usou Bloquear letras: "+o.name+" não pode mais usar "+L.join(", ")+" até o fim do jogo";
+  } else if(k==="choosepos"){
+    if(o.team[arg]) return;
+    pl[target]={aim:arg, forced:true};
+    text=me.name+" usou Escolher a posição: na próxima vez, "+o.name+" vai ter que escalar o "+POS.find(x=>x.id===arg).l;
+  } else if(k==="stealcard"){
+    const oh=validCards(o); if(!oh.length) return;
+    const i=Math.floor(Math.random()*oh.length), c=oh.splice(i,1)[0];
+    pl[id].hand=[...hand, {t:c.t, r:S.room.round}]; pl[target]={hand:oh};
+    text=me.name+" usou Roubar cartinha e pegou a "+CARD_NAME[c.t]+" de "+o.name;
+  } else if(k==="skip"){
+    extra.skips={[target]:true};
+    text=me.name+" usou Perde a vez: "+o.name+" vai pular a próxima jogada";
+  }
+  await write({ players:pl, ...extra, log:logPatch(text), ...atkNote(target, text) });
+  toast("Feito! "+text.replace(me.name+" usou ",""));
+}
+function atkHTML(p){
+  const a=S.ui.atk; if(!a) return "";
+  const k=a.k, tg=atkTargets(k), o=a.to && S.room.players[a.to];
+  let body="";
+  if(!a.to){
+    body = tg.length ? `<div class="row">${tg.map(id=>`<button class="btn" data-act="atkTo" data-id="${id}">${esc(pname(id))}</button>`).join("")}</div>` : '<p class="note" style="margin:0">Nenhum adversário pode ser alvo dessa cartinha agora.</p>';
+    return `<div class="atkbox"><b>${CARD_NAME[k]}:</b> escolha o adversário.${body}<button class="btn ghost" data-act="atkCancel">Cancelar</button></div>`;
+  }
+  if(k==="steal") body = POS.filter(x=>o.team?.[x.id] && p.team?.[x.id]).map(x=>`<button class="btn" data-act="atkGo" data-a="${x.id}">${x.l}: pegar ${esc(o.team[x.id].n)} (${slotOvr(o.team[x.id])}) e dar ${esc(p.team[x.id].n)} (${slotOvr(p.team[x.id])})</button>`).join("");
+  else if(k==="expel" || k==="injury") body = POS.filter(x=>o.team?.[x.id] && (k!=="injury" || !o.team[x.id].inj)).map(x=>`<button class="btn" data-act="atkGo" data-a="${x.id}">${x.l}: ${esc(o.team[x.id].n)} (${slotOvr(o.team[x.id])})</button>`).join("");
+  else if(k==="choosepos") body = POS.filter(x=>!o.team?.[x.id]).map(x=>`<button class="btn" data-act="atkGo" data-a="${x.id}">${x.l}</button>`).join("");
+  else if(k==="block"){ const sel=a.letters||[], bl=o.blocked||[];
+    body = `<div class="letters">${AL.split("").map(L=>`<button data-act="atkL" data-l="${L}" ${bl.includes(L)?"disabled":""} aria-pressed="${sel.includes(L)}" class="${sel.includes(L)?"on":""}">${L}</button>`).join("")}</div><button class="btn gold" data-act="atkGo" ${sel.length?"":"disabled"}>Bloquear ${sel.join(", ")||"letras"}</button>`; }
+  else body = `<button class="btn gold" data-act="atkGo">Usar contra ${esc(o.name)}</button>`;
+  const hint = k==="block" ? `Escolha até 3 letras que ${esc(o.name)} não vai poder usar até o fim do jogo.` : k==="choosepos" ? `Escolha a posição que ${esc(o.name)} vai ter que preencher na próxima vez.` : "";
+  return `<div class="atkbox"><b>${CARD_NAME[k]} contra ${esc(o.name)}</b>${hint?`<p class="note" style="margin:0">${hint}</p>`:""}<div class="stack" style="gap:6px">${body}</div><button class="btn ghost" data-act="atkCancel">Cancelar</button></div>`;
+}
+
 async function freeLetter(L){
   const id=actor(), p=S.room.players[id];
   await write({ players:{[id]:{ pending:{letter:L, idx:-1} }}, log:logPatch(p.name+" escolheu a letra "+L+" (o quadro acabou)") });
@@ -2250,7 +2356,7 @@ async function pass(){
   if(S.room.turn!==id) return;
   if((p.passes||0)>=1){ toast("Você já passou a vez nesta partida. Só pode uma vez."); return; }
   const players=clone(S.room.players); players[id]={...p, pending:null, aim:null, passes:(p.passes||0)+1};
-  await write({ players:{[id]:{pending:null, aim:null, passes:(p.passes||0)+1}}, log:logPatch(p.name+" passou a vez"+(p.pending?" com a letra "+p.pending.letter:"")), ...nextTurnPatch(players) });
+  await write({ players:{[id]:{pending:null, aim:null, forced:null, passes:(p.passes||0)+1}}, log:logPatch(p.name+" passou a vez"+(p.pending?" com a letra "+p.pending.letter:"")), ...nextTurnPatch(players) });
 }
 async function skipTurn(){
   const id=S.room.turn, p=S.room.players[id];
@@ -2276,13 +2382,15 @@ function rulesHTML(){
     <li>Cada jogador tem um quadro com os números de 1 a 26. Atrás deles estão as 26 letras do alfabeto, embaralhadas de um jeito diferente para cada um.</li>
     <li>Na sua vez, <b>escolha primeiro a posição</b> no campo (4-3-3). Depois abra um número: a letra que sair é a inicial do jogador que vai nessa posição.</li>
     <li>Digite o nome de um jogador de futebol com essa inicial e escale. Não vale repetir jogador: quem já foi escalado por alguém não pode entrar de novo. Vale qualquer nome pelo qual o jogador é conhecido: o Messi entra com M (Messi) ou com L (Lionel ou Leo Messi). O jogo sugere nomes de uma lista com mais de 1.600 jogadores, cada um com o overall do auge da carreira. Em posição parecida (volante e meia, lateral e zagueiro, ponta e centroavante, lateral trocado de lado) o jogador fica <b>adaptado</b> e perde 3 pontos. Fora de posição perde 8, e goleiro na linha ou jogador de linha no gol cai para 45. O overall do time é a média dos 11.</li>
-    <li>Oito números do quadro trazem, junto com a letra, uma <b>cartinha</b> (2 de cada um dos 4 tipos, explicados abaixo). Você pode usar na hora ou guardar para a próxima rodada.</li>
+    <li>Quinze números do quadro trazem, junto com a letra, uma <b>cartinha</b>: 8 de ajuda (2 de cada) e 7 de ataque contra os adversários (1 de cada). Todas estão explicadas abaixo. Você pode usar na hora ou guardar para a próxima rodada.</li>
     <li>Se não lembrar de ninguém, dá para <b>passar a vez</b>, mas só <b>uma vez por partida</b> e você perde a letra.</li>
     <li>Quando todo mundo completar os 11, os times são comparados posição por posição e cada um vota no melhor time (não vale votar no seu).</li>
   </ol>
-  <div class="lbl" style="margin-top:14px">As cartinhas</div>
+  <div class="lbl" style="margin-top:14px">Cartinhas de ajuda (2 de cada)</div>
   <div class="cardhelp">${["repeat","letter","reroll","pos"].map(k=>`<div class="ch"><span class="chi">${CARD_ICONS[k]}</span><div><b>${CARD_NAME[k]}</b><p>${CARD_DESC[k]}</p><small>Quando usar: ${CARD_WHEN[k].toLowerCase()}</small></div></div>`).join("")}</div>
-  <p class="note" style="margin:8px 0 0">Cada cartinha vale na rodada em que saiu e na seguinte. Depois disso, some da sua mão.</p>
+  <div class="lbl" style="margin-top:14px">Cartinhas de ataque (1 de cada)</div>
+  <div class="cardhelp">${ATK.map(k=>`<div class="ch"><span class="chi atk">${CARD_ICONS[k]}</span><div><b>${CARD_NAME[k]}</b><p>${CARD_DESC[k]}</p><small>Quando usar: na sua vez, sem gastar a jogada.</small></div></div>`).join("")}</div>
+  <p class="note" style="margin:8px 0 0">Cada cartinha vale na rodada em que saiu e na seguinte. Depois disso, some da sua mão. Quem recebe um ataque é avisado na hora.</p>
   </div>`;
 }
 function vHome(){
@@ -2343,7 +2451,7 @@ function pitchHTML(p, opts={}){
       const act = mode==="swap" ? "swapsel" : mode==="pos" ? "reaim" : "aim";
       const sel = mode==="swap" && S.ui.swapA===pos.id;
       return `<button class="slot ${t?"full":""} ${t&&t.ok===false?"off":""} ${t&&t.a?"adapt":""} ${can?"can":""} ${aimed||sel?"aim":""}" ${can?`data-act="${act}" data-pos="${pos.id}"`:"disabled"} style="left:${pos.x}%;top:${pos.y}%" aria-pressed="${aimed?"true":"false"}" aria-label="${pos.l}${t?": "+esc(t.n):" vazia"}">
-        ${t?`<span class="lt">${esc(t.l)}</span><span class="ov ${ovrTier(slotOvr(t))}">${slotOvr(t)}</span>`:""}<span class="pos">${pos.l}${t&&t.ok===false?(t.a?" · adapt.":" · fora"):""}</span>${t?`<span class="nm">${esc(t.n)}</span>`:""}${aimed && pend?`<span class="nm">${esc(pend.letter)}…</span>`:""}</button>`;
+        ${t?`<span class="lt">${esc(t.l)}</span><span class="ov ${ovrTier(slotOvr(t))}">${slotOvr(t)}</span>`:""}<span class="pos">${pos.l}${t&&t.ok===false?(t.a?" · adapt.":" · fora"):""}${t&&t.inj?" · lesão":""}</span>${t?`<span class="nm">${esc(t.n)}</span>`:""}${aimed && pend?`<span class="nm">${esc(pend.letter)}…</span>`:""}</button>`;
     }).join("")}</div>`;
 }
 function boardHTML(p, mine){
@@ -2363,23 +2471,23 @@ function handHTML(p, mine){
   } else if(mine && S.ui.pick==="swap"){
     picker = `<p class="note" style="margin:0"><b>Trocar jogadores:</b> ${S.ui.swapA ? "agora toque no segundo jogador. Os dois trocam de lugar." : "toque em dois jogadores do seu time para trocar os dois de lugar."}</p>`;
   } else if(mine && S.ui.pick){
-    const opts = S.ui.pick==="repeat" ? pastLetters(p) : AL.split("");
+    const opts = (S.ui.pick==="repeat" ? pastLetters(p) : AL.split("")).filter(L=>!(p.blocked||[]).includes(L));
     picker = `<div class="stack" style="gap:6px"><span class="lbl">${S.ui.pick==="repeat"?"Escolha uma letra que você já usou no seu time":"Escolha qualquer letra"}</span>${opts.length?`<div class="letters">${opts.map(X=>`<button data-act="pickL" data-l="${X}">${X}</button>`).join("")}</div>`:'<p class="note" style="margin:0">Você ainda não escalou ninguém, então não tem letra para repetir.</p>'}</div>`;
   }
-  if(!hand.length) return `<div class="stack" style="gap:6px"><span class="lbl">Suas cartinhas</span><p class="note" style="margin:0">Nenhuma ainda. Oito números do seu quadro trazem uma cartinha junto com a letra.</p></div>`;
+  if(!hand.length) return `<div class="stack" style="gap:6px"><span class="lbl">Suas cartinhas</span><p class="note" style="margin:0">Nenhuma ainda. Quinze números do seu quadro trazem uma cartinha junto com a letra.</p></div>`;
   return `<div class="stack" style="gap:8px"><span class="lbl">Suas cartinhas</span><div class="cards">${hand.map(c=>{
-    const usable = mine && (c.t==="swap" ? teamCount(p)>=2 : c.t==="pos" ? !!pend && teamCount(p)<10 : !!p.aim && (c.t==="reroll" ? !!pend : (c.t==="repeat" ? pastLetters(p).length>0 : true)));
-    const act = c.t==="reroll" ? "cReroll" : "cPick";
+    const usable = mine && (isAtk(c.t) ? atkTargets(c.t).length>0 : c.t==="swap" ? teamCount(p)>=2 : c.t==="pos" ? !!pend && teamCount(p)<10 : !!p.aim && (c.t==="reroll" ? !!pend : (c.t==="repeat" ? pastLetters(p).length>0 : true)));
+    const act = isAtk(c.t) ? "atk" : c.t==="reroll" ? "cReroll" : "cPick";
     const exp = c.r + 1 > r.round ? "vale até a próxima rodada" : "última rodada!";
-    return `<button class="card" ${usable?`data-act="${act}" data-k="${c.t}"`:"disabled"} aria-pressed="${S.ui.pick===c.t?"true":"false"}">${CARD_ICONS[c.t]}<b>${CARD_NAME[c.t]}</b><span class="cdesc">${CARD_DESC[c.t]}</span><small>${exp}</small></button>`;
-  }).join("")}</div>${picker}</div>`;
+    return `<button class="card ${isAtk(c.t)?"atkcard":""}" ${usable?`data-act="${act}" data-k="${c.t}"`:"disabled"} aria-pressed="${S.ui.pick===c.t?"true":"false"}">${CARD_ICONS[c.t]}<b>${CARD_NAME[c.t]}</b><span class="cdesc">${CARD_DESC[c.t]}</span><small>${exp}</small></button>`;
+  }).join("")}</div>${picker}${mine?atkHTML(p):""}${(p.blocked||[]).length?`<p class="note" style="margin:0">Letras bloqueadas para você: <b>${p.blocked.join(", ")}</b></p>`:""}</div>`;
 }
 function actionHTML(p){
   if(!p.pending){
     if(!p.aim) return `<div class="panel stack"><h3 style="font-size:24px">1. Escolha a posição no campo</h3><p class="note" style="margin:0">Toque numa posição vazia. Depois você abre um número e escala alguém com a letra que sair.</p>${handHTML(p,true)}</div>`;
     const lab = POS.find(x=>x.id===p.aim).l;
     if(p.revealed.length>=26) return `<div class="panel stack"><div class="lbl">O quadro acabou. Escolha uma letra para ${lab}</div><div class="letters">${AL.split("").map(L=>`<button data-act="free" data-l="${L}">${L}</button>`).join("")}</div></div>`;
-    return `<div class="panel stack"><h3 style="font-size:24px">2. Abra um número para ${lab}</h3><p class="note" style="margin:0">Ainda dá para mudar a posição tocando em outra no campo.</p>${handHTML(p,true)}</div>`;
+    return `<div class="panel stack"><h3 style="font-size:24px">2. Abra um número para ${lab}</h3><p class="note" style="margin:0">${p.forced ? "Um adversário usou Escolher a posição: desta vez você tem que escalar o "+lab+"." : "Ainda dá para mudar a posição tocando em outra no campo."}</p>${handHTML(p,true)}</div>`;
   }
   const L=p.pending.letter, lab=POS.find(x=>x.id===p.aim)?.l||"";
   return `<div class="panel action">
@@ -2428,7 +2536,7 @@ function vDone(){
   <div class="teams">${[...r.order].sort((a,b)=>(teamOvr(r.players[b])||0)-(teamOvr(r.players[a])||0)).map(id=>{const p=r.players[id];return `<div class="panel team stack"><div class="row" style="justify-content:space-between"><div><h3>${esc(p.name)}</h3><span class="note">${Object.values(p.team||{}).filter(t=>t.ok!==false).length} de 11 na posição · venceu ${wins[id]||0} posições</span></div><div class="teamovr ${ovrTier(teamOvr(p)||0)}"><small>OVR</small>${teamOvr(p)??"—"}</div>${online?`<span class="votes">${tally[id]||0} voto${(tally[id]||0)===1?"":"s"}</span>`:""}</div>
     ${pitchHTML(p,{mini:true})}
     ${online && id!==S.me ? `<button class="btn ${myVote===id?"gold":""}" data-act="vote" data-id="${id}">${myVote===id?"Seu voto":"Votar neste time"}</button>`:""}</div>`;}).join("")}</div>
-  <div class="panel stack" style="margin-top:16px"><span class="lbl">Posição por posição</span><p class="note" style="margin:0">Em destaque, quem tem o maior overall em cada posição. Adaptado perde 3 pontos e fora de posição perde 8.</p><div class="cmpwrap"><table class="cmp"><thead><tr><th>Posição</th>${r.order.map(id=>`<th>${esc(r.players[id].name)}</th>`).join("")}</tr></thead><tbody>${KEYS.map(k=>{const pos=POS.find(x=>x.id===k);return `<tr><th>${pos.l}</th>${r.order.map(id=>{const t=r.players[id].team?.[k], v=slotOvr(t);return `<td class="${t&&t.ok===false?"offp":""} ${t&&v===best[k]?"win":""}">${t?`<span class="ovrb ${ovrTier(v)}">${v}</span> ${esc(t.n)}`:"—"}${t&&t.ok===false?(t.a?" <small>adaptado</small>":" <small>fora</small>"):""}</td>`;}).join("")}</tr>`;}).join("")}</tbody></table></div></div>
+  <div class="panel stack" style="margin-top:16px"><span class="lbl">Posição por posição</span><p class="note" style="margin:0">Em destaque, quem tem o maior overall em cada posição. Adaptado perde 3 pontos e fora de posição perde 8.</p><div class="cmpwrap"><table class="cmp"><thead><tr><th>Posição</th>${r.order.map(id=>`<th>${esc(r.players[id].name)}</th>`).join("")}</tr></thead><tbody>${KEYS.map(k=>{const pos=POS.find(x=>x.id===k);return `<tr><th>${pos.l}</th>${r.order.map(id=>{const t=r.players[id].team?.[k], v=slotOvr(t);return `<td class="${t&&t.ok===false?"offp":""} ${t&&v===best[k]?"win":""}">${t?`<span class="ovrb ${ovrTier(v)}">${v}</span> ${esc(t.n)}`:"—"}${t&&t.ok===false?(t.a?" <small>adaptado</small>":" <small>fora</small>"):""}${t&&t.inj?" <small>lesão</small>":""}</td>`;}).join("")}</tr>`;}).join("")}</tbody></table></div></div>
   ${host ? `<div class="row" style="margin-top:16px"><button class="btn gold" data-act="rematch">Jogar de novo</button></div>` : ""}`;
 }
 
@@ -2468,6 +2576,11 @@ async function act(a, d={}){
       case "cReroll": return cardReroll();
       case "cPick": S.ui.pick = S.ui.pick===d.k ? null : d.k; S.ui.swapA=null; return render();
       case "reaim": return cardPos(d.pos);
+      case "atk": S.ui.atk = S.ui.atk?.k===d.k ? null : {k:d.k}; S.ui.pick=null; return render();
+      case "atkTo": S.ui.atk = {...S.ui.atk, to:d.id, letters:[]}; return render();
+      case "atkL": { const a=S.ui.atk; const set=new Set(a.letters||[]); set.has(d.l)?set.delete(d.l):(set.size<3&&set.add(d.l)); a.letters=[...set]; return render(); }
+      case "atkGo": return atkDo(S.ui.atk.k, S.ui.atk.to, S.ui.atk.k==="block" ? S.ui.atk.letters : d.a);
+      case "atkCancel": S.ui.atk=null; return render();
       case "swapsel": return cardSwap(d.pos);
       case "pickL": return cardPick(S.ui.pick, d.l);
       case "sugg": S.ui.draft=d.n; render(); return;
