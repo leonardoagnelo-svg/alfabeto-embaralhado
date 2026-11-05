@@ -270,6 +270,7 @@ body.withbar{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 .cardbtn.pulse{animation:pulse 1.2s ease-in-out infinite}
 @keyframes pulse{50%{box-shadow:0 0 0 8px rgba(230,184,76,.35)}}
 @media (prefers-reduced-motion:reduce){.ncard,.cardbtn.pulse{animation:none}}
+.mustnote{color:var(--gold-hi)!important}
 .sugg{display:flex;flex-wrap:wrap;gap:6px}
 .sugg button{border:1px solid #2c4a3a;background:var(--panel2);border-radius:9px;padding:6px 10px;text-align:left;display:flex;flex-direction:column;line-height:1.15;max-width:100%}
 .sugg button b{font-weight:700;font-size:14px}
@@ -2169,11 +2170,20 @@ function suggestions(letter, draft, slot){
   return out.slice(0, 8);
 }
 const hintMode = () => S.room?.hints || "auto";
+/* modo Sugestões: se existe jogador da posição com a letra, é obrigatório escolher um deles */
+function fitCandidates(L, slot){ const used=usedKeys(); return PL.filter(e=>!used.has(e.key) && fits(e,slot) && e.norms.some(n=>n.charAt(0).toUpperCase()===L)); }
+const mustFit = (p) => hintMode()==="full" && p?.pending && p.aim && fitCandidates(p.pending.letter, p.aim).length>0;
 function suggHTML(p){
   if(hintMode()==="off") return "";
   if(hintMode()==="auto" && normName(S.ui.draft).length<3) return `<p class="note" style="margin:0">${S.ui.draft ? "Continue digitando: com 3 letras aparecem nomes parecidos." : "Pense num jogador e comece a digitar."}</p>`;
   const pend=p.pending; if(!pend || !p.aim) return "";
-  const list = suggestions(pend.letter, S.ui.draft, p.aim);
+  const must = mustFit(p), lab=POS.find(x=>x.id===p.aim).l;
+  const list = suggestions(pend.letter, S.ui.draft, p.aim).filter(x=>!must || x.fit);
+  if(hintMode()==="full" && !S.ui.draft) {
+    const head = must ? `<p class="note mustnote" style="margin:0">Modo Sugestões: escolha um jogador que joga de <b>${lab}</b>.</p>` : `<p class="note mustnote" style="margin:0">Ninguém da lista joga de <b>${lab}</b> com a letra ${esc(pend.letter)}. Pode escolher de outra posição.</p>`;
+    if(list.length) return head + `<span class="lbl">Sugestões com ${esc(pend.letter)}</span><div class="sugg">${list.map(x=>`<button data-act="sugg" data-n="${esc(x.name)}" class="${x.fit?"fit":""}"><b><span class="ovrb ${ovrTier(x.e.ovr)}">${x.e.ovr}</span> ${esc(x.name)}</b><small>${x.name!==x.e.names[0]?esc(x.e.names[0])+" · ":""}${esc(posText(x.e))}</small></button>`).join("")}</div>`;
+    return head;
+  }
   if(!list.length) return `<p class="note" style="margin:0">${S.ui.draft ? "Nenhum jogador da lista com esse começo. Se ele existe, pode escalar assim mesmo." : "Nenhum jogador da lista com essa letra. Se você lembrar de algum, pode escalar assim mesmo."}</p>`;
   return `<span class="lbl">Sugestões com ${esc(pend.letter)}</span><div class="sugg">${list.map(x=>`<button data-act="sugg" data-n="${esc(x.name)}" class="${x.fit?"fit":""}"><b><span class="ovrb ${ovrTier(x.e.ovr)}">${x.e.ovr}</span> ${esc(x.name)}</b><small>${x.name!==x.e.names[0]?esc(x.e.names[0])+" · ":""}${esc(posText(x.e))}</small></button>`).join("")}</div>`;
 }
@@ -2181,6 +2191,7 @@ function fitHTML(p){
   if(hintMode()==="off") return "";
   const name=S.ui.draft.trim(); if(!name || !p.aim) return "";
   const e=lookup(name), lab=POS.find(x=>x.id===p.aim).l;
+  if(mustFit(p) && name.length>=3 && (!e || !fits(e,p.aim))) return `<span class="fit off">No modo Sugestões você tem que escolher alguém que joga de ${lab}.</span>`;
   if(!e) return name.length<3 ? "" : `<span class="fit unk">Não está na nossa lista. Vale se a galera concordar, e entra com overall ${UNKNOWN_OVR}.</span>`;
   const v=effOvr(e,p.aim);
   return fits(e,p.aim) ? `<span class="fit ok">Overall ${e.ovr}. Joga de ${esc(posText(e))}, está na posição.</span>` : (adapted(e,p.aim) ? `<span class="fit off">Overall ${e.ovr}. Joga de ${esc(posText(e))}, posição parecida: no ${lab} fica adaptado com ${v}.</span>` : `<span class="fit off">Overall ${e.ovr}, mas joga de ${esc(posText(e))}. Fora de posição no ${lab}, fica com ${v}.</span>`);
@@ -2531,6 +2542,7 @@ async function place(nameOverride){
   const name=(nameOverride ?? S.ui.draft).trim();
   if(!name){ toast("Digite o nome do jogador primeiro."); document.getElementById("draft")?.focus(); return; }
   if(firstLetter(name)!==pend.letter){ toast("O nome precisa começar com "+pend.letter+"."); return; }
+  if(!S.botActing && mustFit(p)){ const ce=lookup(name); if(!ce || !fits(ce,posId)){ const lb=POS.find(x=>x.id===posId).l; showEvt("Escolha alguém da posição", "No modo Sugestões, se existe jogador que joga de "+lb+" com a letra "+pend.letter+", você tem que escolher um deles. Veja as sugestões.", "pos", "help"); return; } }
   const owner=whoHas(name);
   if(owner){ toast(name+" já foi escalado"+(owner===p.name?" no seu time":" pelo "+owner)+". Escolha outro."); return; }
   const posLabel = POS.find(x=>x.id===posId).l;
@@ -2819,7 +2831,7 @@ function vLocal(){
     <div class="row" style="flex-wrap:nowrap"><input id="localDraft" maxlength="18" placeholder="Nome do jogador" value="${esc(S.ui.localDraft)}"><button class="btn" data-act="addLocal">Adicionar</button></div>
     <div class="stack" style="gap:6px"><span class="lbl">Adicionar robô</span><div class="row">${Object.entries(BOT_LEVEL).map(([k,v])=>`<button class="btn" data-act="addBotLocal" data-l="${k}">Robô ${v}</button>`).join("")}</div></div>
     <ul class="plist">${S.ui.localNames.map((n,i)=>`<li><span>${esc(n.name)}${n.bot?` <span class="lbl">robô ${BOT_LEVEL[n.level]}</span>`:""}</span><button class="btn ghost" data-act="rmLocal" data-i="${i}" aria-label="Remover ${esc(n.name)}">Remover</button></li>`).join("") || '<li class="note">Ninguém ainda.</li>'}</ul>
-    <div class="stack" style="gap:6px"><span class="lbl">Ajuda para escalar</span><div class="seg">${[["off","Sem dicas"],["auto","Autocompletar"],["full","Sugestões"]].map(([k,v])=>`<button data-act="hintsLocal" data-v="${k}" aria-pressed="${(S.ui.hints||"auto")===k}">${v}</button>`).join("")}</div><p class="note" style="margin:0">${({off:"Ninguém vê nomes: cada um tem que lembrar e digitar.",auto:"Os nomes aparecem só depois de digitar 3 letras.",full:"Mostra sugestões de jogadores assim que a letra sai."})[(S.ui.hints||"auto")]}</p></div>
+    <div class="stack" style="gap:6px"><span class="lbl">Ajuda para escalar</span><div class="seg">${[["off","Sem dicas"],["auto","Autocompletar"],["full","Sugestões"]].map(([k,v])=>`<button data-act="hintsLocal" data-v="${k}" aria-pressed="${(S.ui.hints||"auto")===k}">${v}</button>`).join("")}</div><p class="note" style="margin:0">${({off:"Ninguém vê nomes: cada um tem que lembrar e digitar.",auto:"Os nomes aparecem só depois de digitar 3 letras.",full:"Mostra sugestões assim que a letra sai e obriga a escolher alguém da posição, se existir."})[(S.ui.hints||"auto")]}</p></div>
     <div class="err" role="alert">${esc(S.ui.err)}</div>
     <button class="btn gold" data-act="startLocal" ${S.ui.localNames.length<2?"disabled":""}>Começar partida</button>
   </div>`;
