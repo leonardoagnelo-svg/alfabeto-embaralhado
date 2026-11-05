@@ -136,6 +136,7 @@ input::placeholder{color:#6f8a79}
 .atkbox .btn{text-align:left}
 .letters button.on{background:var(--flag);color:#fff;border-color:var(--flag)}
 .letters button:disabled{opacity:.3}
+.card .why{font-weight:700;opacity:1}
 .cdesc{font-size:11.5px;line-height:1.2;font-weight:500;padding:0 6px}
 .card{min-height:0;padding:10px 6px}
 .cardhelp{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:10px;margin-top:8px}
@@ -2175,7 +2176,7 @@ const CARD_DESC = {
   reroll:"Descarta a letra que saiu e você abre outro número.",
   pos:"Leva a letra que saiu para outra posição vazia do campo.",
   swap:"Troca dois jogadores do seu time de lugar.",
-  steal:"Troca um jogador seu por um do adversário na mesma posição.",
+  steal:"Pega um jogador do adversário para a mesma posição do seu time. Se você já tiver alguém lá, ele vai para o adversário.",
   expel:"Tira um jogador do time do adversário. Ele vai ter que escalar a posição de novo.",
   block:"Escolha até 3 letras que o adversário não pode usar até o fim do jogo.",
   choosepos:"Você escolhe a posição que o adversário vai ter que preencher na próxima vez dele.",
@@ -2282,7 +2283,7 @@ const pname = id => S.room.players[id]?.name || "?";
 function atkTargets(k){
   const me=S.room.players[actor()];
   return others().filter(id => { const o=S.room.players[id];
-    if(k==="steal") return POS.some(x => o.team?.[x.id] && me.team?.[x.id]);
+    if(k==="steal") return POS.some(x => o.team?.[x.id] && !(me.aim===x.id && !me.team?.[x.id]));
     if(k==="expel" || k==="injury") return teamCount(o)>0 && (k!=="injury" || Object.values(o.team).some(t=>!t.inj));
     if(k==="choosepos") return teamCount(o)<11 && !o.forced;
     if(k==="stealcard") return validCards(o).length>0;
@@ -2298,9 +2299,14 @@ async function atkDo(k, target, arg){
   S.ui.atk=null;
   let pl={[id]:{hand}}, extra={}, text="";
   if(k==="steal"){
-    const mine=me.team[arg], his=o.team[arg]; if(!mine||!his) return;
-    pl[id].team={[arg]:{...slotFor(his,arg)}}; pl[target]={team:{[arg]:{...slotFor(mine,arg)}}};
-    text=me.name+" usou Roubar jogador: pegou "+his.n+" de "+o.name+" e mandou "+mine.n+" no lugar ("+POS.find(x=>x.id===arg).l+")";
+    const mine=me.team[arg], his=o.team[arg]; if(!his) return;
+    pl[id].team={[arg]:{...slotFor(his,arg)}}; pl[target]={team:{[arg]: mine ? {...slotFor(mine,arg)} : null}};
+    text=me.name+" usou Roubar jogador: pegou "+his.n+" ("+POS.find(x=>x.id===arg).l+") de "+o.name+(mine?" e mandou "+mine.n+" no lugar":"");
+    if(!mine && teamCount(me)+1>=11){ /* time completo: encerra a vez */
+      Object.assign(pl[id], {pending:null, aim:null, forced:null});
+      const players=clone(S.room.players); players[id]={...me, team:{...me.team, [arg]:his}};
+      Object.assign(extra, nextTurnPatch(players));
+    }
   } else if(k==="expel"){
     const t=o.team[arg]; if(!t) return;
     pl[target]={team:{[arg]:null}};
@@ -2337,13 +2343,13 @@ function atkHTML(p){
     body = tg.length ? `<div class="row">${tg.map(id=>`<button class="btn" data-act="atkTo" data-id="${id}">${esc(pname(id))}</button>`).join("")}</div>` : '<p class="note" style="margin:0">Nenhum adversário pode ser alvo dessa cartinha agora.</p>';
     return `<div class="atkbox"><b>${CARD_NAME[k]}:</b> escolha o adversário.${body}<button class="btn ghost" data-act="atkCancel">Cancelar</button></div>`;
   }
-  if(k==="steal") body = POS.filter(x=>o.team?.[x.id] && p.team?.[x.id]).map(x=>`<button class="btn" data-act="atkGo" data-a="${x.id}">${x.l}: pegar ${esc(o.team[x.id].n)} (${slotOvr(o.team[x.id])}) e dar ${esc(p.team[x.id].n)} (${slotOvr(p.team[x.id])})</button>`).join("");
+  if(k==="steal") body = POS.filter(x=>o.team?.[x.id] && !(p.aim===x.id && !p.team?.[x.id])).map(x=>`<button class="btn" data-act="atkGo" data-a="${x.id}">${x.l}: pegar ${esc(o.team[x.id].n)} (${slotOvr(o.team[x.id])}) ${p.team?.[x.id] ? "e dar "+esc(p.team[x.id].n)+" ("+slotOvr(p.team[x.id])+")" : "para o seu "+x.l+" vazio"}</button>`).join("");
   else if(k==="expel" || k==="injury") body = POS.filter(x=>o.team?.[x.id] && (k!=="injury" || !o.team[x.id].inj)).map(x=>`<button class="btn" data-act="atkGo" data-a="${x.id}">${x.l}: ${esc(o.team[x.id].n)} (${slotOvr(o.team[x.id])})</button>`).join("");
   else if(k==="choosepos") body = POS.filter(x=>!o.team?.[x.id]).map(x=>`<button class="btn" data-act="atkGo" data-a="${x.id}">${x.l}</button>`).join("");
   else if(k==="block"){ const sel=a.letters||[], bl=o.blocked||[];
     body = `<div class="letters">${AL.split("").map(L=>`<button data-act="atkL" data-l="${L}" ${bl.includes(L)?"disabled":""} aria-pressed="${sel.includes(L)}" class="${sel.includes(L)?"on":""}">${L}</button>`).join("")}</div><button class="btn gold" data-act="atkGo" ${sel.length?"":"disabled"}>Bloquear ${sel.join(", ")||"letras"}</button>`; }
   else body = `<button class="btn gold" data-act="atkGo">Usar contra ${esc(o.name)}</button>`;
-  const hint = k==="block" ? `Escolha até 3 letras que ${esc(o.name)} não vai poder usar até o fim do jogo.` : k==="choosepos" ? `Escolha a posição que ${esc(o.name)} vai ter que preencher na próxima vez.` : "";
+  const hint = k==="steal" ? `O jogador vem para a mesma posição no seu time. Se você já tiver alguém lá, ele vai para ${esc(o.name)}; se a posição estiver vazia, ${esc(o.name)} fica sem ninguém nela.` : k==="block" ? `Escolha até 3 letras que ${esc(o.name)} não vai poder usar até o fim do jogo.` : k==="choosepos" ? `Escolha a posição que ${esc(o.name)} vai ter que preencher na próxima vez.` : "";
   return `<div class="atkbox"><b>${CARD_NAME[k]} contra ${esc(o.name)}</b>${hint?`<p class="note" style="margin:0">${hint}</p>`:""}<div class="stack" style="gap:6px">${body}</div><button class="btn ghost" data-act="atkCancel">Cancelar</button></div>`;
 }
 
@@ -2479,7 +2485,7 @@ function handHTML(p, mine){
     const usable = mine && (isAtk(c.t) ? atkTargets(c.t).length>0 : c.t==="swap" ? teamCount(p)>=2 : c.t==="pos" ? !!pend && teamCount(p)<10 : !!p.aim && (c.t==="reroll" ? !!pend : (c.t==="repeat" ? pastLetters(p).length>0 : true)));
     const act = isAtk(c.t) ? "atk" : c.t==="reroll" ? "cReroll" : "cPick";
     const exp = c.r + 1 > r.round ? "vale até a próxima rodada" : "última rodada!";
-    return `<button class="card ${isAtk(c.t)?"atkcard":""}" ${usable?`data-act="${act}" data-k="${c.t}"`:"disabled"} aria-pressed="${S.ui.pick===c.t?"true":"false"}">${CARD_ICONS[c.t]}<b>${CARD_NAME[c.t]}</b><span class="cdesc">${CARD_DESC[c.t]}</span><small>${exp}</small></button>`;
+    return `<button class="card ${isAtk(c.t)?"atkcard":""}" ${usable?`data-act="${act}" data-k="${c.t}"`:"disabled"} aria-pressed="${S.ui.pick===c.t?"true":"false"}">${CARD_ICONS[c.t]}<b>${CARD_NAME[c.t]}</b><span class="cdesc">${CARD_DESC[c.t]}</span><small>${exp}</small>${isAtk(c.t) && !usable ? `<small class="why">${!mine ? "Use na sua vez" : "Nenhum adversário pode ser alvo agora"}</small>` : ""}</button>`;
   }).join("")}</div>${picker}${mine?atkHTML(p):""}${(p.blocked||[]).length?`<p class="note" style="margin:0">Letras bloqueadas para você: <b>${p.blocked.join(", ")}</b></p>`:""}</div>`;
 }
 function actionHTML(p){
@@ -2516,7 +2522,7 @@ function vGame(){
   <div class="game">
     <div class="stack">
       <div class="panel stack"><div class="row" style="justify-content:space-between"><span class="lbl">Quadro de ${esc(vp.name)}</span><span class="note">${vp.revealed.length} de 26 abertos</span></div>${boardHTML(vp, viewingMine)}</div>
-      ${viewingMine ? actionHTML(vp) : `<div class="panel"><p class="note" style="margin:0">${viewId===me ? "Espere a sua vez. Você pode olhar os times dos outros nas abas acima." : "Você está vendo o time de "+esc(vp.name)+"."}${vp.pending?" Letra da vez: <b>"+esc(vp.pending.letter)+"</b>.":""}</p></div>`}
+      ${viewingMine ? actionHTML(vp) : `<div class="panel"><p class="note" style="margin:0">${viewId===me ? "Espere a sua vez. Você pode olhar os times dos outros nas abas acima." : "Você está vendo o time de "+esc(vp.name)+"."}${vp.pending?" Letra da vez: <b>"+esc(vp.pending.letter)+"</b>.":""}</p>${viewId===me && S.mode==="online" ? `<div style="margin-top:10px">${handHTML(vp,false)}</div>` : ""}</div>`}
     </div>
     <div class="stack">
       ${pitchHTML(vp, {interactive:viewingMine})}
