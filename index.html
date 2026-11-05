@@ -2497,7 +2497,7 @@ const CARD_DESC = {
   injury:"Um jogador do adversário perde 10 de overall até o fim da partida.",
   stealcard:"Pega uma cartinha guardada na mão do adversário.",
   skip:"O adversário pula a próxima jogada dele.",
-  dey:"Você escolhe um adversário e uma posição, e o Deyverson entra no time dele. Se já tiver alguém lá, sai. Só existe um Deyverson por partida: quem tirar primeiro leva."
+  dey:"Você escolhe o adversário e ele é obrigado a colocar o Deyverson no time, na posição que ele escolher. Se já tiver alguém lá, sai. Só existe um Deyverson por partida: quem tirar primeiro leva."
 };
 const CARD_WHEN = {
   repeat:"Depois de escolher a posição.",
@@ -2599,7 +2599,7 @@ async function cardSwap(posId){
 /* ---------- cartinhas de ataque ---------- */
 const ATK = ["steal","rob","expel","block","choosepos","injury","stealcard","skip","dey"];
 const deySlots = o => POS.filter(x => !(o.aim===x.id && !o.team?.[x.id]));
-const deyPlaced = () => !!whoHas("Deyverson");
+const deyPlaced = () => !!whoHas("Deyverson") || S.room.order.some(i=>S.room.players[i]?.deyPend);
 const isAtk = t => ATK.includes(t);
 const robSlots = me => POS.filter(x => !me.team?.[x.id] && me.aim!==x.id);
 const others = () => S.room.order.filter(x => x!==actor());
@@ -2613,7 +2613,7 @@ function atkTargets(k){
     if(k==="choosepos") return teamCount(o)<11 && !o.forced;
     if(k==="stealcard") return validCards(o).length>0;
     if(k==="block") return (o.blocked||[]).length < 26;
-    if(k==="dey") return !deyPlaced() && deySlots(o).length>0;
+    if(k==="dey") return !deyPlaced() && teamCount(o)<11;
     return teamCount(o)<11;
   });
 }
@@ -2662,10 +2662,9 @@ async function atkDo(k, target, arg){
     pl[id].hand=[...hand, {t:c.t, r:S.room.round}]; pl[target]={hand:oh};
     text=me.name+" usou Roubar cartinha e pegou a "+CARD_NAME[c.t]+" de "+o.name;
   } else if(k==="dey"){
-    if(deyPlaced() || !POS.some(x=>x.id===arg)) return;
-    const old=o.team[arg], lb=POS.find(x=>x.id===arg).l;
-    pl[target]={team:{[arg]:{...slotFor({n:"Deyverson", l:"D"}, arg), o:lookup("Deyverson")?.ovr ?? 80, inj:null, dey:true}}};
-    text=me.name+" usou Deyverson: o Deyverson entrou no "+lb+" de "+o.name+(old?" e "+old.n+" saiu do time":"");
+    if(deyPlaced() || teamCount(o)>=11) return;
+    pl[target]={deyPend:{by:id}};
+    text=me.name+" usou Deyverson contra "+o.name+": na próxima vez, "+o.name+" vai ter que escolher onde o Deyverson joga";
   } else if(k==="skip"){
     extra.skips={[target]:true};
     text=me.name+" usou Perde a vez: "+o.name+" vai pular a próxima jogada";
@@ -2692,12 +2691,12 @@ function atkHTML(p){
       body = `<p class="note" style="margin:0">Você vai pegar <b>${esc(his.n)}</b> (${lh}). Agora escolha quem você dá em troca: ele vai para o ${lh} de ${esc(o.name)} e ${esc(his.n)} entra no lugar dele no seu time.</p>` + POS.filter(x=>p.team?.[x.id]).map(x=>{ const v=slotFor(his,x.id).v; return `<button class="btn" data-act="atkGo" data-a="${a.his}>${x.id}">${x.l}: dar ${esc(p.team[x.id].n)} (${slotOvr(p.team[x.id])}) → ${esc(his.n)} vale ${v} aí</button>`; }).join("") + `<button class="btn ghost" data-act="atkPick" data-a="">Escolher outro jogador</button>`; }
   }
   else if(k==="expel" || k==="injury") body = POS.filter(x=>o.team?.[x.id] && (k!=="injury" || !o.team[x.id].inj)).map(x=>`<button class="btn" data-act="atkGo" data-a="${x.id}">${x.l}: ${esc(o.team[x.id].n)} (${slotOvr(o.team[x.id])})</button>`).join("");
-  else if(k==="dey") body = deySlots(o).map(x=>{ const t=o.team?.[x.id], v=effOvr(lookup("Deyverson"),x.id); return `<button class="btn" data-act="atkGo" data-a="${x.id}">${x.l}: ${t ? "tirar "+esc(t.n)+" ("+slotOvr(t)+")" : "vazio"} → Deyverson (${v})</button>`; }).join("");
+  else if(k==="dey") body = `<button class="btn gold" data-act="atkGo">Mandar o Deyverson para ${esc(o.name)}</button>`;
   else if(k==="choosepos") body = POS.filter(x=>!o.team?.[x.id]).map(x=>`<button class="btn" data-act="atkGo" data-a="${x.id}">${x.l}</button>`).join("");
   else if(k==="block"){ const sel=a.letters||[], bl=o.blocked||[];
     body = `<div class="letters">${AL.split("").map(L=>`<button data-act="atkL" data-l="${L}" ${bl.includes(L)?"disabled":""} aria-pressed="${sel.includes(L)}" class="${sel.includes(L)?"on":""}">${L}</button>`).join("")}</div><button class="btn gold" data-act="atkGo" ${sel.length?"":"disabled"}>Bloquear ${sel.join(", ")||"letras"}</button>`; }
   else body = `<button class="btn gold" data-act="atkGo">Usar contra ${esc(o.name)}</button>`;
-  const hint = k==="steal" ? (a.his ? "" : `Escolha qualquer jogador de ${esc(o.name)}. Depois você escolhe qualquer jogador seu para dar em troca.`) : k==="rob" ? (a.his ? "" : `Escolha qualquer jogador de ${esc(o.name)}. Ele vem para o seu time e ${esc(o.name)} fica com a posição vazia.`) : k==="block" ? `Escolha até 3 letras que ${esc(o.name)} não vai poder usar até o fim do jogo.` : k==="choosepos" ? `Escolha a posição que ${esc(o.name)} vai ter que preencher na próxima vez.` : k==="dey" ? `O Deyverson entra no time de ${esc(o.name)} na posição que você escolher. Quem estiver lá sai do time.` : "";
+  const hint = k==="steal" ? (a.his ? "" : `Escolha qualquer jogador de ${esc(o.name)}. Depois você escolhe qualquer jogador seu para dar em troca.`) : k==="rob" ? (a.his ? "" : `Escolha qualquer jogador de ${esc(o.name)}. Ele vem para o seu time e ${esc(o.name)} fica com a posição vazia.`) : k==="block" ? `Escolha até 3 letras que ${esc(o.name)} não vai poder usar até o fim do jogo.` : k==="choosepos" ? `Escolha a posição que ${esc(o.name)} vai ter que preencher na próxima vez.` : k==="dey" ? `${esc(o.name)} vai ser obrigado a escalar o Deyverson na próxima vez dele, na posição que ele escolher. Quem estiver lá sai do time.` : "";
   return `<div class="atkbox"><b>${CARD_NAME[k]} contra ${esc(o.name)}</b>${hint?`<p class="note" style="margin:0">${hint}</p>`:""}<div class="stack" style="gap:6px">${body}</div><button class="btn ghost" data-act="atkCancel">Cancelar</button></div>`;
 }
 
@@ -2744,7 +2743,6 @@ async function botAttack(id){
   else if(k==="expel") arg=bestSlot(()=>true);
   else if(k==="injury") arg=bestSlot(x=>!o.team[x.id].inj);
   else if(k==="choosepos"){ const empty=POS.filter(x=>!o.team?.[x.id]).map(x=>x.id); arg=empty.includes("gol")?"gol":empty[Math.floor(Math.random()*empty.length)]; }
-  else if(k==="dey"){ const opts=deySlots(o).map(x=>x.id), filled=opts.filter(x=>o.team?.[x]).sort((a,b)=>slotOvr(o.team[b])-slotOvr(o.team[a])); arg=filled[0] || opts[0]; }
   else if(k==="block") arg=["R","M","C","D","A","S","L","P"].filter(L=>!(o.blocked||[]).includes(L)).sort(()=>Math.random()-0.5).slice(0,3);
   if(["steal","rob","expel","injury","choosepos","dey"].includes(k) && !arg) return;
   await atkDo(k, target, arg); await sleep(900);
@@ -2756,6 +2754,11 @@ async function botTurn(id){
     await sleep(800);
     await botAttack(id);
     if(S.room.turn!==id) return;
+    if(P().deyPend){
+      const dv=lookup("Deyverson"), best=deySlots(P()).map(x=>({id:x.id, g:effOvr(dv,x.id)-(P().team?.[x.id]?slotOvr(P().team[x.id]):0)})).sort((a,b)=>b.g-a.g)[0];
+      if(best){ await deyPlace(best.id); await sleep(800); }
+      if(S.room.turn!==id) return;
+    }
     if(!P().aim){
       const empty=POS.filter(x=>!P().team?.[x.id]).map(x=>x.id); if(!empty.length) return;
       await setAim(empty[Math.floor(Math.random()*empty.length)]); await sleep(700);
@@ -2803,6 +2806,19 @@ async function pass(force){
   if((p.passes||0)>=1 && !force){ toast("Você já passou a vez nesta partida. Só pode uma vez."); return; }
   const players=clone(S.room.players); players[id]={...p, pending:null, aim:null, passes:(p.passes||0)+1};
   await write({ players:{[id]:{pending:null, aim:null, forced:null, passes:(p.passes||0)+1}}, log:logPatch(p.name+" passou a vez"+(p.pending?" com a letra "+p.pending.letter:"")), ...nextTurnPatch(players) });
+}
+async function deyPlace(posId){
+  const id=actor(), p=S.room.players[id];
+  if(S.room.turn!==id || !p.deyPend || !deySlots(p).some(x=>x.id===posId)) return;
+  const old=p.team?.[posId], lb=POS.find(x=>x.id===posId).l;
+  const slot={...slotFor({n:"Deyverson", l:"D"}, posId), o:lookup("Deyverson")?.ovr ?? 80, inj:null, dey:true};
+  const patch={ players:{[id]:{ deyPend:null, team:{[posId]:slot} }}, log:logPatch(p.name+" escalou o Deyverson no "+lb+(old?" e "+old.n+" saiu do time":"")) };
+  if(teamCount(p)+(old?0:1)>=11){
+    Object.assign(patch.players[id], {pending:null, aim:null, forced:null});
+    const players=clone(S.room.players); players[id]={...p, deyPend:null, team:{...p.team, [posId]:slot}};
+    Object.assign(patch, nextTurnPatch(players));
+  }
+  await write(patch);
 }
 async function skipTurn(){
   const id=S.room.turn, p=S.room.players[id];
@@ -2935,14 +2951,16 @@ function handHTML(p, mine){
     return `<button class="card ${isAtk(c.t)?"atkcard":""}" ${usable?`data-act="${act}" data-k="${c.t}"`:"disabled"} aria-pressed="${S.ui.pick===c.t?"true":"false"}">${CARD_ICONS[c.t]}<b>${CARD_NAME[c.t]}</b><span class="cdesc">${CARD_DESC[c.t]}</span><small>${exp}</small>${isAtk(c.t) && !usable ? `<small class="why">${!mine ? "Use na sua vez" : "Nenhum adversário pode ser alvo agora"}</small>` : ""}</button>`;
   }).join("")}</div>${picker}${mine?atkHTML(p):""}${(p.blocked||[]).length?`<p class="note" style="margin:0">Letras bloqueadas para você: <b>${p.blocked.join(", ")}</b></p>`:""}</div>`;
 }
-function stepOf(p){ if(S.ui.pick==="pos" && p.pending) return "reaim"; if(!p.aim) return "aim"; if(!p.pending) return "reveal"; return "name"; }
+function stepOf(p){ if(p.deyPend) return "dey"; if(S.ui.pick==="pos" && p.pending) return "reaim"; if(!p.aim) return "aim"; if(!p.pending) return "reveal"; return "name"; }
 function stepperHTML(step){
-  const st=[["aim","Posição"],["reveal","Número"],["name","Jogador"]], idx={aim:0,reveal:1,name:2,reaim:2}[step];
+  const st=[["aim","Posição"],["reveal","Número"],["name","Jogador"]], idx={dey:0,aim:0,reveal:1,name:2,reaim:2}[step];
   return `<ol class="stepper">${st.map(([k,l],i)=>`<li class="${i<idx?"done":i===idx?"now":""}"><span>${i+1}</span>${l}</li>`).join("")}</ol>`;
 }
 function actionHTML(p){
   const step=stepOf(p), lab=p.aim ? POS.find(x=>x.id===p.aim).l : "";
   if(step==="reaim") return `${stepperHTML(step)}<div class="panel stack"><h3 class="stage-h">Trocar posição</h3><p class="note" style="margin:0">Toque numa posição vazia para levar a letra <b>${esc(p.pending.letter)}</b> para lá.</p>${pitchHTML(p,{interactive:true})}<button class="btn ghost" data-act="cancelPick">Cancelar</button></div>`;
+  if(step==="dey"){ const dv=lookup("Deyverson");
+    return `${stepperHTML(step)}<div class="panel stack"><h3 class="stage-h">Escale o Deyverson</h3><p class="note" style="margin:0"><b>${esc(pname(p.deyPend.by))}</b> usou a cartinha Deyverson em você. Escolha a posição onde ele vai jogar: quem estiver lá sai do time. Depois a sua vez continua normalmente.</p><div class="stack" style="gap:6px">${deySlots(p).map(x=>{ const t=p.team?.[x.id]; return `<button class="btn" data-act="deyPlace" data-a="${x.id}">${x.l}: ${t ? "tirar "+esc(t.n)+" ("+slotOvr(t)+")" : "vazio"} → Deyverson (${effOvr(dv,x.id)})</button>`; }).join("")}</div></div>`; }
   if(step==="aim") return `${stepperHTML(step)}<div class="panel stack"><h3 class="stage-h">Toque na posição que você quer preencher</h3>${pitchHTML(p,{interactive:true})}</div>`;
   if(step==="reveal"){
     if(p.revealed.length>=26) return `${stepperHTML(step)}<div class="panel stack"><h3 class="stage-h">O quadro acabou</h3><p class="note" style="margin:0">Escolha uma letra para o ${lab}.</p><div class="letters">${AL.split("").filter(L=>!(p.blocked||[]).includes(L)).map(L=>`<button data-act="free" data-l="${L}">${L}</button>`).join("")}</div></div>`;
@@ -3112,6 +3130,7 @@ async function act(a, d={}){
       case "atkL": { const a=S.ui.atk; const set=new Set(a.letters||[]); set.has(d.l)?set.delete(d.l):(set.size<3&&set.add(d.l)); a.letters=[...set]; return render(); }
       case "atkGo": S.ui.sheet=false; return atkDo(S.ui.atk.k, S.ui.atk.to, S.ui.atk.k==="block" ? S.ui.atk.letters : d.a);
       case "atkCancel": S.ui.atk=null; return render();
+      case "deyPlace": return deyPlace(d.a);
       case "swapsel": return cardSwap(d.pos);
       case "pickL": S.ui.sheet=false; return cardPick(S.ui.pick, d.l);
       case "sugg": S.ui.draft=d.n; render(); return;
