@@ -160,6 +160,8 @@ input::placeholder{color:#6f8a79}
 .othhead b{font-size:15px}
 .othturn{font-family:var(--f-label);text-transform:uppercase;letter-spacing:.06em;font-size:11px;color:#fff;background:var(--flag);border-radius:999px;padding:1px 8px}
 .oth .pitch .slot{pointer-events:none}
+.thinking{font-family:var(--f-body);font-size:14px;color:var(--muted);font-weight:500;animation:blink 1.2s infinite}
+@keyframes blink{50%{opacity:.35}}
 .sugg{display:flex;flex-wrap:wrap;gap:6px}
 .sugg button{border:1px solid #2c4a3a;background:var(--panel2);border-radius:9px;padding:6px 10px;text-align:left;display:flex;flex-direction:column;line-height:1.15;max-width:100%}
 .sugg button b{font-weight:700;font-size:14px}
@@ -2028,6 +2030,7 @@ function subscribe(){
     if(data.status==="lobby") S.screen="lobby";
     else if(data.status==="playing") S.screen="game";
     else if(data.status==="done") S.screen="done";
+    setTimeout(scheduleBot, 0);
     if(prevTurn !== data.turn){ S.ui.pick=null; S.ui.swapA=null; S.ui.atk=null; S.ui.draft=""; if(S.mode==="local") S.view=null; }
     render();
   }, e => { S.ui.net = "A conexão com a sala caiu. Saia e entre de novo."; render(); });
@@ -2142,7 +2145,7 @@ async function joinRoom(){
 function startLocal(){
   const names = S.ui.localNames; if(names.length<2){ S.ui.err="Adicione pelo menos 2 jogadores."; return render(); }
   S.mode="local"; store=localStore(); S.code=null;
-  const players={}; names.forEach((n,i)=>players["l"+i]={name:n, joinedAt:i});
+  const players={}; names.forEach((n,i)=>players[(n.bot?"bot":"l")+i]={name:n.name, joinedAt:i, ...(n.bot?{bot:true, level:n.level}:{})});
   const room={ code:null, hostId:"local", status:"lobby", createdAt:Date.now(), cardUses:2, players, order:[], turn:null, round:0, log:[], votes:{} };
   store.set(buildStart(room)); S.ui.err=""; subscribe();
 }
@@ -2154,7 +2157,7 @@ function buildStart(room){
     const board = shuffle(AL.split(""));
     const cards = Array(26).fill(""), types = shuffle(["repeat","repeat","letter","letter","reroll","reroll","pos","pos","steal","expel","block","choosepos","injury","stealcard","skip"]);
     shuffle([...Array(26).keys()]).slice(0,types.length).forEach((i,k) => cards[i] = types[k]);
-    r.players[id] = { name:r.players[id].name, joinedAt:r.players[id].joinedAt, board, cards, revealed:[], team:{}, hand:[], aim:null, pending:null };
+    r.players[id] = { name:r.players[id].name, joinedAt:r.players[id].joinedAt, ...(r.players[id].bot?{bot:true, level:r.players[id].level||"medio"}:{}), board, cards, revealed:[], team:{}, hand:[], aim:null, pending:null };
   });
   Object.assign(r, { status:"playing", order, turn:order[0], round:1, votes:{}, log:[{t:Date.now(), text:"Começou! "+r.players[order[0]].name+" abre a partida."}] });
   return r;
@@ -2162,13 +2165,13 @@ function buildStart(room){
 async function startGame(){ try{ await store.set(buildStart(S.room)); }catch(e){ toast("Não deu para começar. Tente de novo."); } }
 async function rematch(){
   const r = clone(S.room);
-  Object.keys(r.players).forEach(id => r.players[id] = {name:r.players[id].name, joinedAt:r.players[id].joinedAt});
+  Object.keys(r.players).forEach(id => r.players[id] = {name:r.players[id].name, joinedAt:r.players[id].joinedAt, ...(r.players[id].bot?{bot:true, level:r.players[id].level}:{})});
   try{ await store.set(S.mode==="local" ? buildStart(r) : {...r, status:"lobby", order:[], turn:null, round:0, log:[], votes:{}}); }catch(e){ toast("Não deu para reiniciar."); }
 }
 function leave(){ if(mq){ try{mq.end(true);}catch(e){} mq=null; } if(unsub) unsub(); unsub=null; clearTimeout(netTimer); store=null; S.room=null; S.screen="home"; S.mode=null; S.view=null; S.ui.err=""; render(); }
 
 /* ---------- turn logic ---------- */
-const actor = () => S.mode==="local" ? S.room.turn : S.me;
+const actor = () => S.botActing || (S.mode==="local" ? S.room.turn : S.me);
 function logPatch(text){ return [...(S.room.log||[]), {t:Date.now(), text}].slice(-30); }
 function nextTurnPatch(players){
   const r=S.room, order=r.order, i=order.indexOf(r.turn), skipped=[];
@@ -2239,10 +2242,10 @@ function whoHas(name){
   for(const id of S.room.order){ const t=S.room.players[id].team||{}; for(const x in t){ if(playerKey(t[x].n)===k) return S.room.players[id].name; } }
   return null;
 }
-async function place(){
+async function place(nameOverride){
   const id=actor(), p=S.room.players[id], pend=p.pending, posId=p.aim;
   if(S.room.turn!==id || !pend || !posId || p.team[posId]) return;
-  const name=S.ui.draft.trim();
+  const name=(nameOverride ?? S.ui.draft).trim();
   if(!name){ toast("Digite o nome do jogador primeiro."); document.getElementById("draft")?.focus(); return; }
   if(firstLetter(name)!==pend.letter){ toast("O nome precisa começar com "+pend.letter+"."); return; }
   const owner=whoHas(name);
@@ -2251,7 +2254,7 @@ async function place(){
   const e = lookup(name), ok = e ? fits(e,posId) : null, nm = e ? e.names.find(x=>normName(x)===normName(name)) || name : name;
   const slot = {n:nm, l:pend.letter, ok, a:adapted(e,posId), o:e?e.ovr:null, v:effOvr(e,posId)};
   const players = clone(S.room.players); players[id] = {...p, team:{...p.team, [posId]:slot}, pending:null, aim:null};
-  await write({ players:{[id]:{ team:{[posId]:slot}, pending:null, aim:null, forced:null, hand:validCards(p) }}, log:logPatch(p.name+" escalou "+nm+" ("+posLabel+")"+(ok===false?" fora de posição":"")), ...nextTurnPatch(players) });
+  await write({ players:{[id]:{ team:{[posId]:slot}, pending:null, aim:null, forced:null, hand:validCards(p) }}, log:logPatch(p.name+" escalou "+nm+" ("+posLabel+")"+(ok===false?(slot.a?" adaptado":" fora de posição"):"")), ...nextTurnPatch(players) });
 }
 async function cardReroll(){
   const id=actor(), p=S.room.players[id];
@@ -2367,14 +2370,101 @@ function atkHTML(p){
   return `<div class="atkbox"><b>${CARD_NAME[k]} contra ${esc(o.name)}</b>${hint?`<p class="note" style="margin:0">${hint}</p>`:""}<div class="stack" style="gap:6px">${body}</div><button class="btn ghost" data-act="atkCancel">Cancelar</button></div>`;
 }
 
+/* ---------- robôs ---------- */
+const BOT_NAMES = ["Robô Artilheiro","Robô Camisa 10","Robô Zagueirão","Robô Paredão","Robô Driblador","Robô Volantão","Robô Matador"];
+const BOT_LEVEL = {facil:"Fácil", medio:"Médio", craque:"Craque"};
+let botBusy=false;
+const isBotTurn = () => !!S.room?.players?.[S.room.turn]?.bot;
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+function nextBotName(existing){ const used=new Set(existing); return BOT_NAMES.find(n=>!used.has(n)) || "Robô "+(existing.length+1); }
+function botPick(p, L, slot){
+  if((p.blocked||[]).includes(L)) return null;
+  const used=usedKeys(), out=[];
+  for(const e of PL){
+    if(used.has(e.key)) continue;
+    const i=e.norms.findIndex(n=>n.charAt(0).toUpperCase()===L); if(i<0) continue;
+    out.push({name:e.names[i], eff:effOvr(e,slot)});
+  }
+  if(!out.length) return null;
+  out.sort((a,b)=>b.eff-a.eff);
+  const lvl=p.level||"medio";
+  if(lvl==="craque") return out[Math.random()<0.8?0:Math.min(1,out.length-1)];
+  if(lvl==="facil"){ const pool=out.filter(x=>x.eff>=60); const src=pool.length?pool:out; return src[Math.floor(Math.random()*Math.min(src.length,30))]; }
+  return out[Math.floor(Math.random()*Math.min(out.length,6))];
+}
+function botBestLetter(p, slot, letters){
+  let best=null;
+  for(const L of letters){ if((p.blocked||[]).includes(L)) continue; const c=botPick({...p, level:"craque"}, L, slot); if(c && (!best || c.eff>best.eff)) best={L, eff:c.eff}; }
+  return best?.L || null;
+}
+async function botAttack(id){
+  const p=S.room.players[id], hand=validCards(p).filter(c=>isAtk(c.t));
+  if(!hand.length || Math.random()<0.35) return;
+  const k=hand[0].t, tg=atkTargets(k); if(!tg.length) return;
+  const target=tg.sort((a,b)=>(teamOvr(S.room.players[b])||0)*teamCount(S.room.players[b])-(teamOvr(S.room.players[a])||0)*teamCount(S.room.players[a]))[0];
+  const o=S.room.players[target], me=S.room.players[id];
+  let arg=null;
+  const bestSlot = filter => POS.filter(x=>o.team?.[x.id] && filter(x)).sort((a,b)=>slotOvr(o.team[b.id])-slotOvr(o.team[a.id]))[0]?.id;
+  if(k==="steal") arg=bestSlot(x=>!(me.aim===x.id && !me.team?.[x.id]) && (!me.team?.[x.id] || slotOvr(o.team[x.id])>slotOvr(me.team[x.id])));
+  else if(k==="expel") arg=bestSlot(()=>true);
+  else if(k==="injury") arg=bestSlot(x=>!o.team[x.id].inj);
+  else if(k==="choosepos"){ const empty=POS.filter(x=>!o.team?.[x.id]).map(x=>x.id); arg=empty.includes("gol")?"gol":empty[Math.floor(Math.random()*empty.length)]; }
+  else if(k==="block") arg=["R","M","C","D","A","S","L","P"].filter(L=>!(o.blocked||[]).includes(L)).sort(()=>Math.random()-0.5).slice(0,3);
+  if(["steal","expel","injury","choosepos"].includes(k) && !arg) return;
+  await atkDo(k, target, arg); await sleep(900);
+}
+async function botTurn(id){
+  const P=()=>S.room.players[id];
+  S.botActing=id;
+  try{
+    await sleep(800);
+    await botAttack(id);
+    if(S.room.turn!==id) return;
+    if(!P().aim){
+      const empty=POS.filter(x=>!P().team?.[x.id]).map(x=>x.id); if(!empty.length) return;
+      await setAim(empty[Math.floor(Math.random()*empty.length)]); await sleep(700);
+    }
+    for(let tries=0; tries<30 && !P().pending; tries++){
+      const closed=[...Array(26).keys()].filter(i=>!P().revealed.includes(i));
+      if(!closed.length){ const L=botBestLetter(P(), P().aim, AL.split("")); if(L) await freeLetter(L); break; }
+      await reveal(closed[Math.floor(Math.random()*closed.length)]); await sleep(700);
+    }
+    if(!P().pending){ await pass(true); return; }
+    let cand=botPick(P(), P().pending.letter, P().aim);
+    const weak = c => !c || c.eff < 70;
+    if(weak(cand) && hasCard(P(),"pos")){
+      const L=P().pending.letter, opts=POS.filter(x=>!P().team?.[x.id] && x.id!==P().aim).map(x=>({id:x.id, c:botPick({...P(),level:"craque"},L,x.id)})).filter(o=>o.c).sort((a,b)=>b.c.eff-a.c.eff);
+      if(opts.length && (!cand || opts[0].c.eff>cand.eff+5)){ await cardPos(opts[0].id); await sleep(700); cand=botPick(P(), L, P().aim); }
+    }
+    if(weak(cand) && hasCard(P(),"letter")){ const L=botBestLetter(P(), P().aim, AL.split("")); if(L){ await cardPick("letter", L); await sleep(700); cand=botPick(P(), P().pending.letter, P().aim); } }
+    if(weak(cand) && hasCard(P(),"repeat") && pastLetters(P()).length){ const L=botBestLetter(P(), P().aim, pastLetters(P())); if(L){ await cardPick("repeat", L); await sleep(700); cand=botPick(P(), P().pending.letter, P().aim); } }
+    if(!cand && hasCard(P(),"reroll")){
+      await cardReroll(); await sleep(700);
+      const closed=[...Array(26).keys()].filter(i=>!P().revealed.includes(i));
+      if(closed.length){ await reveal(closed[Math.floor(Math.random()*closed.length)]); await sleep(700); }
+      if(P().pending) cand=botPick(P(), P().pending.letter, P().aim);
+    }
+    await sleep(600);
+    if(cand && P().pending){ S.ui.draft=cand.name; await place(cand.name); }
+    else await pass(true);
+  } finally { S.botActing=null; S.ui.draft=""; render(); }
+}
+function scheduleBot(){
+  const r=S.room; if(!r || r.status!=="playing" || botBusy) return;
+  if(!r.players[r.turn]?.bot) return;
+  if(!(S.mode==="local" || r.hostId===S.me)) return;
+  botBusy=true;
+  setTimeout(async () => { try{ await botTurn(r.turn); }catch(e){ console.error(e); } botBusy=false; scheduleBot(); }, 400);
+}
+
 async function freeLetter(L){
   const id=actor(), p=S.room.players[id];
   await write({ players:{[id]:{ pending:{letter:L, idx:-1} }}, log:logPatch(p.name+" escolheu a letra "+L+" (o quadro acabou)") });
 }
-async function pass(){
+async function pass(force){
   const id=actor(), p=S.room.players[id];
   if(S.room.turn!==id) return;
-  if((p.passes||0)>=1){ toast("Você já passou a vez nesta partida. Só pode uma vez."); return; }
+  if((p.passes||0)>=1 && !force){ toast("Você já passou a vez nesta partida. Só pode uma vez."); return; }
   const players=clone(S.room.players); players[id]={...p, pending:null, aim:null, passes:(p.passes||0)+1};
   await write({ players:{[id]:{pending:null, aim:null, forced:null, passes:(p.passes||0)+1}}, log:logPatch(p.name+" passou a vez"+(p.pending?" com a letra "+p.pending.letter:"")), ...nextTurnPatch(players) });
 }
@@ -2432,6 +2522,7 @@ function vHome(){
       <div class="err" role="alert">${esc(S.ui.err)}</div>
       <div class="divider">sem internet pra todo mundo?</div>
       <button class="btn ghost" data-act="toLocal">Jogar num aparelho só</button>
+      <button class="btn ghost" data-act="vsBot">Jogar contra o robô</button>
     </div>
     ${rulesHTML()}
   </div>`;
@@ -2439,9 +2530,10 @@ function vHome(){
 function vLocal(){
   return `<div class="top"><h2 style="font-size:30px">Num aparelho só</h2><button class="btn ghost" data-act="home">Voltar</button></div>
   <div class="panel stack" style="max-width:560px">
-    <p class="note">Adicione quem vai jogar. Na vez de cada um, o celular passa de mão em mão.</p>
+    <p class="note">Adicione quem vai jogar. Na vez de cada um, o celular passa de mão em mão. Para jogar sozinho, coloque o seu nome e adicione um ou mais robôs.</p>
     <div class="row" style="flex-wrap:nowrap"><input id="localDraft" maxlength="18" placeholder="Nome do jogador" value="${esc(S.ui.localDraft)}"><button class="btn" data-act="addLocal">Adicionar</button></div>
-    <ul class="plist">${S.ui.localNames.map((n,i)=>`<li><span>${esc(n)}</span><button class="btn ghost" data-act="rmLocal" data-i="${i}" aria-label="Remover ${esc(n)}">Remover</button></li>`).join("") || '<li class="note">Ninguém ainda.</li>'}</ul>
+    <div class="stack" style="gap:6px"><span class="lbl">Adicionar robô</span><div class="row">${Object.entries(BOT_LEVEL).map(([k,v])=>`<button class="btn" data-act="addBotLocal" data-l="${k}">Robô ${v}</button>`).join("")}</div></div>
+    <ul class="plist">${S.ui.localNames.map((n,i)=>`<li><span>${esc(n.name)}${n.bot?` <span class="lbl">robô ${BOT_LEVEL[n.level]}</span>`:""}</span><button class="btn ghost" data-act="rmLocal" data-i="${i}" aria-label="Remover ${esc(n.name)}">Remover</button></li>`).join("") || '<li class="note">Ninguém ainda.</li>'}</ul>
     <div class="err" role="alert">${esc(S.ui.err)}</div>
     <button class="btn gold" data-act="startLocal" ${S.ui.localNames.length<2?"disabled":""}>Começar partida</button>
   </div>`;
@@ -2454,7 +2546,8 @@ function vLobby(){
   <div class="home-grid">
     <div class="panel stack">
       <div><h2 style="font-size:30px">Esperando a galera</h2><p class="note" style="margin:6px 0 0">Passe o código <b>${esc(r.code)}</b> para os amigos. Eles abrem esta mesma página, colocam o nome e entram.</p></div>
-      <ul class="plist">${ids.map(id=>`<li><span>${esc(r.players[id].name)}${id===S.me?" (você)":""}</span>${id===r.hostId?'<span class="lbl">anfitrião</span>':""}</li>`).join("")}</ul>
+      <ul class="plist">${ids.map(id=>`<li><span>${esc(r.players[id].name)}${id===S.me?" (você)":""}${r.players[id].bot?` <span class="lbl">robô ${BOT_LEVEL[r.players[id].level]||""}</span>`:""}</span>${id===r.hostId?'<span class="lbl">anfitrião</span>':""}${host && r.players[id].bot?`<button class="btn ghost" data-act="rmBotRoom" data-id="${id}">Remover</button>`:""}</li>`).join("")}</ul>
+      ${host ? `<div class="stack" style="gap:6px"><span class="lbl">Adicionar robô</span><div class="row">${Object.entries(BOT_LEVEL).map(([k,v])=>`<button class="btn" data-act="addBotRoom" data-l="${k}">Robô ${v}</button>`).join("")}</div><p class="note" style="margin:0">Os robôs jogam pelo seu celular, então deixe o jogo aberto até o fim.</p></div>` : ""}
       ${host ? `<button class="btn gold" data-act="start">Começar com ${ids.length} jogador${ids.length>1?"es":""}</button>` : '<p class="note">O anfitrião começa a partida quando todos entrarem.</p>'}
     </div>
     ${rulesHTML()}
@@ -2523,14 +2616,15 @@ function actionHTML(p){
 }
 function vGame(){
   const r=S.room, me=actor(), turnP=r.players[r.turn];
-  const myTurn = r.turn===me;
+  const botNow = !!r.players[r.turn]?.bot;
+  const myTurn = r.turn===me && !botNow;
   const viewId = S.view && r.players[S.view] ? S.view : (r.players[me] ? me : r.turn);
   const vp = r.players[viewId];
   const viewingMine = viewId===me && myTurn;
   const host = S.mode==="online" && r.hostId===S.me;
   return `<div class="top"><div class="row">${r.code?`<span class="lbl">Sala</span><span class="code">${esc(r.code)}</span>`:'<span class="lbl">Partida num aparelho só</span>'}<span class="lbl">Rodada ${r.round}</span></div><button class="btn ghost" data-act="leave">Sair</button></div>
   ${S.ui.net?`<p class="err">${esc(S.ui.net)}</p>`:""}
-  <div class="turn ${myTurn?"mine":""}"><div><div class="lbl">${S.mode==="local"?"Passe o celular para":"Agora é a vez de"}</div><h2>${myTurn && S.mode==="online" ? "Sua vez!" : esc(turnP?.name)}</h2></div>
+  <div class="turn ${myTurn?"mine":""}"><div><div class="lbl">${botNow?"O robô está jogando":S.mode==="local"?"Passe o celular para":"Agora é a vez de"}</div><h2>${myTurn && S.mode==="online" ? "Sua vez!" : esc(turnP?.name)}${botNow?' <span class="thinking">pensando…</span>':""}</h2></div>
     ${host && !myTurn ? `<button class="btn ghost" data-act="skip">Pular a vez de ${esc(turnP?.name)}</button>` : ""}</div>
   <div class="tabs" role="group" aria-label="Times">${r.order.map(id=>{const p=r.players[id];return `<button class="tab" data-act="view" data-id="${id}" aria-pressed="${id===viewId}">${id===r.turn?'<span class="dot"></span>':""}${esc(p.name)}${id===S.me&&S.mode==="online"?" (você)":""} <small>${teamCount(p)}/11${teamOvr(p)?" · "+teamOvr(p):""}</small></button>`;}).join("")}</div>
   <div class="game">
@@ -2581,14 +2675,20 @@ document.addEventListener("click", e => {
   const b=e.target.closest("[data-act]"); if(!b || b.disabled) return;
   act(b.dataset.act, b.dataset);
 });
+const GAME_ACTS = new Set(["aim","reveal","place","cReroll","cPick","pickL","pass","free","reaim","swapsel","atk","atkTo","atkL","atkGo","sugg"]);
 async function act(a, d={}){
+  if(GAME_ACTS.has(a) && S.room && isBotTurn() && !S.botActing){ toast("Calma, é a vez do robô."); return; }
   try{
     switch(a){
       case "create": S.ui.err=""; return createRoom();
       case "join": S.ui.err=""; return joinRoom();
       case "toLocal": S.screen="local"; S.ui.err=""; return render();
       case "home": S.screen="home"; S.ui.err=""; return render();
-      case "addLocal": { const n=S.ui.localDraft.trim(); if(!n) return; if(S.ui.localNames.length>=8){ S.ui.err="Máximo de 8 jogadores."; return render(); } S.ui.localNames.push(n); S.ui.localDraft=""; S.ui.err=""; render(); document.getElementById("localDraft")?.focus(); return; }
+      case "addBotLocal": { if(S.ui.localNames.length>=8){ S.ui.err="Máximo de 8 jogadores."; return render(); } S.ui.localNames.push({name:nextBotName(S.ui.localNames.map(x=>x.name)), bot:true, level:d.l}); S.ui.err=""; return render(); }
+      case "vsBot": { const me=(S.ui.name||"").trim()||"Você"; S.ui.localNames=[{name:me},{name:nextBotName([]), bot:true, level:"medio"}]; S.screen="local"; S.ui.err=""; return render(); }
+      case "addBotRoom": { const r=S.room; if(!r || r.hostId!==S.me) return; const ids=Object.keys(r.players); if(ids.length>=8){ toast("Máximo de 8 jogadores."); return; } const id="bot"+Math.random().toString(36).slice(2,8); await write({players:{[id]:{name:nextBotName(ids.map(x=>r.players[x].name)), bot:true, level:d.l, joinedAt:Date.now()}}}); return; }
+      case "rmBotRoom": { if(S.room?.hostId!==S.me) return; await write({players:{[d.id]:null}}); return; }
+      case "addLocal": { const n=S.ui.localDraft.trim(); if(!n) return; if(S.ui.localNames.length>=8){ S.ui.err="Máximo de 8 jogadores."; return render(); } S.ui.localNames.push({name:n}); S.ui.localDraft=""; S.ui.err=""; render(); document.getElementById("localDraft")?.focus(); return; }
       case "rmLocal": S.ui.localNames.splice(+d.i,1); return render();
       case "startLocal": return startLocal();
       case "start": return startGame();
