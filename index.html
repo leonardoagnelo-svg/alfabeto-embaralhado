@@ -162,6 +162,10 @@ input::placeholder{color:#6f8a79}
 .oth .pitch .slot{pointer-events:none}
 .thinking{font-family:var(--f-body);font-size:14px;color:var(--muted);font-weight:500;animation:blink 1.2s infinite}
 @keyframes blink{50%{opacity:.35}}
+.mural.focus{border-color:var(--gold)}
+.team.leader{border-color:var(--ok)}
+.votebar{height:6px;border-radius:999px;background:#223a2e;overflow:hidden}
+.votebar span{display:block;height:100%;background:var(--ok)}
 .sugg{display:flex;flex-wrap:wrap;gap:6px}
 .sugg button{border:1px solid #2c4a3a;background:var(--panel2);border-radius:9px;padding:6px 10px;text-align:left;display:flex;flex-direction:column;line-height:1.15;max-width:100%}
 .sugg button b{font-weight:700;font-size:14px}
@@ -2045,14 +2049,14 @@ function newCode(){ const L="ABCDEFGHJKLMNPQRSTUVWXYZ"; let c=""; for(let i=0;i<
 const BROKERS = ["wss://broker.emqx.io:8084/mqtt", "wss://broker.hivemq.com:8884/mqtt"];
 const TOPIC = code => "alfabeto-embaralhado/v2/" + code;
 let mq = null;
-function connectBroker(){
+function connectBroker(pv){
   return new Promise((res, rej) => {
     if(!window.mqtt) return rej({type:"no-lib"});
     let i = 0;
     const tryNext = () => {
       if(i >= BROKERS.length) return rej({type:"net"});
       const url = BROKERS[i++];
-      const c = mqtt.connect(url, { clientId:"ae_"+Math.random().toString(36).slice(2,10), clean:true, connectTimeout:8000, reconnectPeriod:2000, keepalive:30 });
+      const c = mqtt.connect(url, { clientId:"ae_"+Math.random().toString(36).slice(2,10), clean:true, connectTimeout:8000, reconnectPeriod:2000, keepalive:30, ...(pv?{protocolVersion:pv}:{}) });
       let done=false;
       const t = setTimeout(()=>{ if(done) return; done=true; try{c.end(true);}catch(e){} tryNext(); }, 9000);
       c.once("connect", () => { if(done) return; done=true; clearTimeout(t); res(c); });
@@ -2140,6 +2144,85 @@ async function joinRoom(){
     if(!fine){ try{mq.end(true);}catch(e){} mq=null; S.ui.err="O anfitrião não respondeu. Ele precisa estar com o jogo aberto na tela."; return render(); }
   }
   S.code=code; S.ui.err=""; subscribe();
+}
+
+/* ---------- mural de times (24h, votação aberta) ---------- */
+const MURAL = "alfabeto-embaralhado/v2/mural";
+const DAY = 24*60*60*1000;
+let muralC=null;
+S.mural = { list:{}, votes:{}, status:"idle", focus:null };
+async function muralConn(){
+  if(muralC && muralC.connected) return muralC;
+  try{ muralC = await connectBroker(5); }catch(e){ muralC = await connectBroker(4); }
+  return muralC;
+}
+function muralPub(c, topic, obj){
+  const opts={qos:1, retain:true};
+  if(c.options?.protocolVersion===5) opts.properties={messageExpiryInterval:86400};
+  c.publish(topic, JSON.stringify(obj), opts);
+}
+async function openMural(focus){
+  S.screen="mural"; S.mural.focus=focus||null; render();
+  if(S.mural.status==="ready" || S.mural.status==="loading") return;
+  S.mural.status="loading"; render();
+  let c; try{ c=await muralConn(); }catch(e){ S.mural.status="error"; return render(); }
+  c.on("message", (t, buf) => {
+    if(!t.startsWith(MURAL+"/")) return;
+    const parts=t.slice(MURAL.length+1).split("/");
+    let m=null; try{ m=JSON.parse(buf.toString()); }catch(e){ return; }
+    if(parts[1]==="meta" && m && m.id && Date.now()-m.at < DAY) S.mural.list[m.id]=m;
+    if(parts[1]==="v" && parts[2] && m && m.t){ (S.mural.votes[parts[0]] ||= {})[parts[2]]=m.t; }
+    if(S.screen==="mural"){ clearTimeout(openMural.t); openMural.t=setTimeout(render, 120); }
+  });
+  c.subscribe([MURAL+"/+/meta", MURAL+"/+/v/+"], {qos:1});
+  setTimeout(()=>{ S.mural.status="ready"; if(S.screen==="mural") render(); }, 1500);
+}
+async function publishMural(){
+  const r=S.room; if(!r || r.status!=="done") return;
+  if(r.published){ return openMural(r.published); }
+  let c; try{ c=await muralConn(); }catch(e){ toast("Não consegui conectar ao mural agora. Tente de novo."); return; }
+  const id=Math.random().toString(36).slice(2,9);
+  const meta={ id, at:Date.now(), teams:r.order.map(pid=>{ const p=r.players[pid]; return { k:pid, name:p.name, bot:!!p.bot, ovr:teamOvr(p), team:Object.fromEntries(Object.entries(p.team||{}).map(([k,t])=>[k,{n:t.n, l:t.l, v:slotOvr(t), ok:t.ok, a:!!t.a, inj:!!t.inj}])) }; }) };
+  muralPub(c, MURAL+"/"+id+"/meta", meta);
+  S.mural.list[id]=meta;
+  try{ await write({ published:id }); }catch(e){}
+  toast("Publicado! Fica no mural por 24 horas.");
+  openMural(id);
+}
+function voteMural(id, k){
+  if(!muralC) return;
+  muralPub(muralC, MURAL+"/"+id+"/v/"+S.me, {t:k, at:Date.now()});
+  (S.mural.votes[id] ||= {})[S.me]=k; render();
+}
+function muralLink(id){ return location.origin+location.pathname+"#mural-"+id; }
+async function copyMural(id){
+  const url=muralLink(id);
+  try{ await navigator.clipboard.writeText(url); toast("Link copiado! Mande no grupo."); }
+  catch(e){ toast("Copie o link: "+url); }
+}
+function timeLeft(at){ const ms=at+DAY-Date.now(); if(ms<=0) return "encerrado"; const h=Math.floor(ms/3600000), m=Math.floor(ms%3600000/60000); return h>0 ? "fica no ar por mais "+h+"h"+(m?String(m).padStart(2,"0"):"") : "fica no ar por mais "+m+" min"; }
+function vMural(){
+  const M=S.mural, items=Object.values(M.list).filter(m=>Date.now()-m.at<DAY).sort((a,b)=>b.at-a.at);
+  const focusFirst = M.focus ? [...items.filter(m=>m.id===M.focus), ...items.filter(m=>m.id!==M.focus)] : items;
+  const card = m => {
+    const votes=M.votes[m.id]||{}, tally={}; Object.values(votes).forEach(t=>tally[t]=(tally[t]||0)+1);
+    const total=Object.values(tally).reduce((a,b)=>a+b,0), mine=votes[S.me], top=Math.max(0,...Object.values(tally));
+    const when=new Date(m.at).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+    return `<article class="panel stack mural ${m.id===M.focus?"focus":""}" id="m-${m.id}">
+      <div class="row" style="justify-content:space-between"><div><span class="lbl">Partida de ${when}</span><p class="note" style="margin:2px 0 0">${total} voto${total===1?"":"s"} · ${timeLeft(m.at)}</p></div><button class="btn ghost" data-act="muralCopy" data-id="${m.id}">Copiar link</button></div>
+      <div class="teams">${m.teams.map(t=>{ const n=tally[t.k]||0, pct=total?Math.round(n*100/total):0;
+        return `<div class="panel team stack ${n&&n===top?"leader":""}"><div class="row" style="justify-content:space-between"><div><h3>${esc(t.name)}${t.bot?' <span class="lbl">robô</span>':""}</h3><span class="note">${n} voto${n===1?"":"s"}${total?" · "+pct+"%":""}</span></div><div class="teamovr ${ovrTier(t.ovr||0)}"><small>OVR</small>${t.ovr??"—"}</div></div>
+          <div class="votebar"><span style="width:${pct}%"></span></div>
+          ${pitchHTML({team:t.team},{mini:true})}
+          <button class="btn ${mine===t.k?"gold":""}" data-act="muralVote" data-id="${m.id}" data-k="${t.k}">${mine===t.k?"Seu voto":"Votar neste time"}</button></div>`; }).join("")}</div>
+    </article>`;
+  };
+  return `<div class="top"><h2 style="font-size:34px">Mural dos times</h2><button class="btn ghost" data-act="home">Voltar</button></div>
+  <p class="note" style="margin:0 0 14px">Times publicados nas últimas 24 horas. Vote no que você acha melhor: é um voto por partida em cada celular, e dá para mudar.</p>
+  ${M.status==="error" ? '<p class="err">Não consegui carregar o mural. Verifique a internet e tente de novo.</p>' : ""}
+  ${M.status==="loading" && !items.length ? '<p class="note">Carregando o mural…</p>' : ""}
+  ${M.status==="ready" && !items.length ? '<div class="panel"><p class="note" style="margin:0">Nenhum time publicado nas últimas 24 horas. Termine uma partida e toque em <b>Publicar no mural</b>.</p></div>' : ""}
+  <div class="stack" style="gap:16px">${focusFirst.map(card).join("")}</div>`;
 }
 
 function startLocal(){
@@ -2479,7 +2562,7 @@ async function vote(target){ await write({ votes:{[S.me]:target} }); }
 function render(){
   const a=document.activeElement, keep = a && a.id ? {id:a.id, s:a.selectionStart, e:a.selectionEnd} : null;
   const app=document.getElementById("app");
-  app.innerHTML = S.screen==="home" ? vHome() : S.screen==="local" ? vLocal() : S.screen==="lobby" ? vLobby() : S.screen==="game" ? vGame() : vDone();
+  app.innerHTML = S.screen==="mural" ? vMural() : S.screen==="home" ? vHome() : S.screen==="local" ? vLocal() : S.screen==="lobby" ? vLobby() : S.screen==="game" ? vGame() : vDone();
   if(keep){ const el=document.getElementById(keep.id); if(el){ el.focus(); try{ if(keep.s!=null) el.setSelectionRange(keep.s,keep.e); }catch(e){} } }
 }
 function titleHTML(){
@@ -2523,6 +2606,8 @@ function vHome(){
       <div class="divider">sem internet pra todo mundo?</div>
       <button class="btn ghost" data-act="toLocal">Jogar num aparelho só</button>
       <button class="btn ghost" data-act="vsBot">Jogar contra o robô</button>
+      <div class="divider">resenha</div>
+      <button class="btn" data-act="muralOpen">Ver o mural dos times e votar</button>
     </div>
     ${rulesHTML()}
   </div>`;
@@ -2654,7 +2739,8 @@ function vDone(){
     ${pitchHTML(p,{mini:true})}
     ${online && id!==S.me ? `<button class="btn ${myVote===id?"gold":""}" data-act="vote" data-id="${id}">${myVote===id?"Seu voto":"Votar neste time"}</button>`:""}</div>`;}).join("")}</div>
   <div class="panel stack" style="margin-top:16px"><span class="lbl">Posição por posição</span><p class="note" style="margin:0">Em destaque, quem tem o maior overall em cada posição. Adaptado perde 3 pontos e fora de posição perde 8.</p><div class="cmpwrap"><table class="cmp"><thead><tr><th>Posição</th>${r.order.map(id=>`<th>${esc(r.players[id].name)}</th>`).join("")}</tr></thead><tbody>${KEYS.map(k=>{const pos=POS.find(x=>x.id===k);return `<tr><th>${pos.l}</th>${r.order.map(id=>{const t=r.players[id].team?.[k], v=slotOvr(t);return `<td class="${t&&t.ok===false?"offp":""} ${t&&v===best[k]?"win":""}">${t?`<span class="ovrb ${ovrTier(v)}">${v}</span> ${esc(t.n)}`:"—"}${t&&t.ok===false?(t.a?" <small>adaptado</small>":" <small>fora</small>"):""}${t&&t.inj?" <small>lesão</small>":""}</td>`;}).join("")}</tr>`;}).join("")}</tbody></table></div></div>
-  ${host ? `<div class="row" style="margin-top:16px"><button class="btn gold" data-act="rematch">Jogar de novo</button></div>` : ""}`;
+  <div class="row" style="margin-top:16px">${r.published ? `<button class="btn gold" data-act="muralOpen" data-id="${r.published}">Ver no mural</button><button class="btn" data-act="muralCopy" data-id="${r.published}">Copiar link da votação</button>` : `<button class="btn gold" data-act="muralPublish">Publicar no mural (24h)</button>`}${host ? `<button class="btn" data-act="rematch">Jogar de novo</button>` : ""}</div>
+  <p class="note" style="margin:8px 0 0">${r.published ? "Os times estão no mural por 24 horas. Mande o link para a galera votar." : "Publique os times para qualquer pessoa que abrir o site votar no melhor. Fica no ar por 24 horas."}</p>`;
 }
 
 /* ---------- events ---------- */
@@ -2683,7 +2769,11 @@ async function act(a, d={}){
       case "create": S.ui.err=""; return createRoom();
       case "join": S.ui.err=""; return joinRoom();
       case "toLocal": S.screen="local"; S.ui.err=""; return render();
-      case "home": S.screen="home"; S.ui.err=""; return render();
+      case "muralOpen": return openMural(d.id);
+      case "muralPublish": return publishMural();
+      case "muralVote": return voteMural(d.id, d.k);
+      case "muralCopy": return copyMural(d.id);
+      case "home": if(S.screen==="mural" && S.room){ S.screen = S.room.status==="done"?"done":S.room.status==="playing"?"game":"lobby"; if(location.hash) history.replaceState(null,"",location.pathname); return render(); } S.screen="home"; S.ui.err=""; if(location.hash) history.replaceState(null,"",location.pathname); return render();
       case "addBotLocal": { if(S.ui.localNames.length>=8){ S.ui.err="Máximo de 8 jogadores."; return render(); } S.ui.localNames.push({name:nextBotName(S.ui.localNames.map(x=>x.name)), bot:true, level:d.l}); S.ui.err=""; return render(); }
       case "vsBot": { const me=(S.ui.name||"").trim()||"Você"; S.ui.localNames=[{name:me},{name:nextBotName([]), bot:true, level:"medio"}]; S.screen="local"; S.ui.err=""; return render(); }
       case "addBotRoom": { const r=S.room; if(!r || r.hostId!==S.me) return; const ids=Object.keys(r.players); if(ids.length>=8){ toast("Máximo de 8 jogadores."); return; } const id="bot"+Math.random().toString(36).slice(2,8); await write({players:{[id]:{name:nextBotName(ids.map(x=>r.players[x].name)), bot:true, level:d.l, joinedAt:Date.now()}}}); return; }
@@ -2717,6 +2807,8 @@ async function act(a, d={}){
   }catch(e){ console.error(e); }
 }
 render();
+if(/^#mural/.test(location.hash)) openMural(location.hash.slice(7)||null);
+window.addEventListener("hashchange", ()=>{ if(/^#mural/.test(location.hash)) openMural(location.hash.slice(7)||null); });
 </script>
 </body>
 </html>
