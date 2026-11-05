@@ -301,6 +301,10 @@ body.withbar{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 
 <script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.3/dist/mqtt.min.js"></script>
 <script>
+/* se o primeiro servidor da biblioteca online falhar, tenta outros */
+if(!window.mqtt){ (function load(urls){ if(!urls.length) return; var sc=document.createElement("script"); sc.src=urls[0]; sc.onload=function(){ window.dispatchEvent(new Event("mqtt-ready")); }; sc.onerror=function(){ load(urls.slice(1)); }; document.head.appendChild(sc); })(["https://unpkg.com/mqtt@5.10.3/dist/mqtt.min.js","https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.10.3/mqtt.min.js"]); }
+</script>
+<script>
 const AL = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const POS = [
   {id:"pe",l:"PE",x:18,y:14},{id:"ca",l:"CA",x:50,y:10},{id:"pd",l:"PD",x:82,y:14},
@@ -2720,7 +2724,7 @@ function vHome(){
         <input id="name" maxlength="18" placeholder="Ex.: Igão" value="${esc(S.ui.name)}" autocomplete="nickname"></label>
       <button class="btn gold big" data-act="vsBot">${BALL_SVG.replace('<svg','<svg class="bi"')}Jogar contra o robô</button>
       <div class="divider">com a galera</div>
-      ${!online ? '<p class="note">Não consegui carregar o modo online. Verifique a internet e recarregue a página. Você ainda pode jogar contra o robô ou num aparelho só.</p>' : ''}
+      ${!online ? '<p class="note">Carregando o modo online… Se demorar, recarregue a página. Enquanto isso dá para jogar contra o robô ou num aparelho só.</p>' : ''}
       <button class="btn big" data-act="create" ${online?"":"disabled"}>Criar sala online</button>
       <div class="row joinrow" style="flex-wrap:nowrap">
         <input id="joinCode" maxlength="4" placeholder="Código da sala" style="text-transform:uppercase;letter-spacing:.2em;font-weight:700" value="${esc(S.ui.joinCode)}">
@@ -2989,6 +2993,7 @@ async function act(a, d={}){
     }
   }catch(e){ console.error(e); }
 }
+window.addEventListener("mqtt-ready", ()=>{ if(S.screen==="home") render(); });
 if(!lsGet("ae_onb") && !/^#mural/.test(location.hash)) S.ui.onb=0;
 render();
 if(/^#mural/.test(location.hash)) openMural(location.hash.slice(7)||null);
