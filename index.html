@@ -83,9 +83,9 @@ input::placeholder{color:#6f8a79}
 /* Action */
 .action{display:flex;flex-direction:column;gap:12px}
 .bigletter{font-family:var(--f-display);font-size:64px;line-height:1;width:84px;height:84px;display:grid;place-items:center;border-radius:14px;background:var(--flag);color:#fff;flex:0 0 auto}
-.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
 .card{position:relative;border:0;padding:12px 6px 14px;background:linear-gradient(170deg,var(--gold-hi),var(--gold) 55%,#c99a33);color:var(--ink);
-  clip-path:polygon(50% 0,100% 9%,100% 86%,50% 100%,0 86%,0 9%);display:flex;flex-direction:column;align-items:center;gap:4px;min-height:104px}
+  border-radius:12px;border:1px solid var(--gold-deep);display:flex;flex-direction:column;align-items:center;gap:4px;min-height:104px}
 .card svg{width:30px;height:30px}
 .card b{font-family:var(--f-label);text-transform:uppercase;font-size:13px;line-height:1.05;letter-spacing:.03em}
 .card[aria-pressed="true"]{background:linear-gradient(170deg,#fff,var(--gold-hi))}
@@ -128,6 +128,15 @@ input::placeholder{color:#6f8a79}
 .teamovr{font-family:var(--f-display);font-size:30px;line-height:1;border-radius:10px;padding:6px 10px;text-align:center;display:flex;flex-direction:column}
 .teamovr small{font-family:var(--f-label);font-size:10px;letter-spacing:.1em}
 .cmp td.win{background:rgba(95,211,141,.12);font-weight:700}
+.cdesc{font-size:11.5px;line-height:1.2;font-weight:500;padding:0 6px}
+.card{min-height:0;padding:10px 6px}
+.cardhelp{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:10px;margin-top:8px}
+.ch{display:flex;gap:10px;align-items:flex-start;background:var(--panel2);border-radius:10px;padding:10px 12px}
+.ch b{font-size:15px}
+.ch p{margin:2px 0;font-size:14px}
+.ch small{color:var(--muted);font-size:12.5px}
+.chi{flex:0 0 auto;width:34px;height:34px;border-radius:8px;background:linear-gradient(170deg,var(--gold-hi),var(--gold));color:var(--ink);display:grid;place-items:center}
+.chi svg{width:22px;height:22px}
 .sugg{display:flex;flex-wrap:wrap;gap:6px}
 .sugg button{border:1px solid #2c4a3a;background:var(--panel2);border-radius:9px;padding:6px 10px;text-align:left;display:flex;flex-direction:column;line-height:1.15;max-width:100%}
 .sugg button b{font-weight:700;font-size:14px}
@@ -2110,8 +2119,8 @@ function buildStart(room){
   const order = shuffle(ids);
   ids.forEach(id => {
     const board = shuffle(AL.split(""));
-    const cards = Array(26).fill(""), types = shuffle(["repeat","repeat","letter","letter","reroll","reroll","pos","pos","swap","swap"]);
-    shuffle([...Array(26).keys()]).slice(0,10).forEach((i,k) => cards[i] = types[k]);
+    const cards = Array(26).fill(""), types = shuffle(["repeat","repeat","letter","letter","reroll","reroll","pos","pos"]);
+    shuffle([...Array(26).keys()]).slice(0,8).forEach((i,k) => cards[i] = types[k]);
     r.players[id] = { name:r.players[id].name, joinedAt:r.players[id].joinedAt, board, cards, revealed:[], team:{}, hand:[], aim:null, pending:null };
   });
   Object.assign(r, { status:"playing", order, turn:order[0], round:1, votes:{}, log:[{t:Date.now(), text:"Começou! "+r.players[order[0]].name+" abre a partida."}] });
@@ -2137,6 +2146,20 @@ function nextTurnPatch(players){
   return { status:"done", turn:null };
 }
 const CARD_NAME = {repeat:"Repetir letra", letter:"Trocar letra", reroll:"Trocar número", pos:"Trocar posição", swap:"Trocar jogadores"};
+const CARD_DESC = {
+  repeat:"Troca a letra da vez por uma letra que você já usou no seu time.",
+  letter:"Você escolhe qualquer letra do alfabeto para a posição.",
+  reroll:"Descarta a letra que saiu e você abre outro número.",
+  pos:"Leva a letra que saiu para outra posição vazia do campo.",
+  swap:"Troca dois jogadores do seu time de lugar."
+};
+const CARD_WHEN = {
+  repeat:"Depois de escolher a posição.",
+  letter:"Depois de escolher a posição.",
+  reroll:"Depois de abrir o número.",
+  pos:"Depois de abrir o número.",
+  swap:"Na sua vez."
+};
 const validCards = (p, r=S.room) => (p.hand||[]).filter(c => c.r + 1 >= r.round);
 const hasCard = (p, t) => validCards(p).some(c => c.t===t);
 function useCard(p, t){
@@ -2158,6 +2181,7 @@ async function reveal(idx){
   const patch = { revealed, pending:{letter:L, idx} };
   if(c) patch.hand = [...validCards(p), {t:c, r:S.room.round}];
   await write({ players:{[id]:patch}, log:logPatch(p.name+" abriu o nº "+(idx+1)+" e tirou a letra "+L+(c?" e a cartinha "+CARD_NAME[c]+"!":"")) });
+  if(c) toast("Você ganhou a cartinha "+CARD_NAME[c]+": "+CARD_DESC[c]+" Vale nesta rodada e na próxima.");
 }
 function whoHas(name){
   const k=playerKey(name);
@@ -2248,11 +2272,14 @@ function rulesHTML(){
     <li>Cada jogador tem um quadro com os números de 1 a 26. Atrás deles estão as 26 letras do alfabeto, embaralhadas de um jeito diferente para cada um.</li>
     <li>Na sua vez, <b>escolha primeiro a posição</b> no campo (4-3-3). Depois abra um número: a letra que sair é a inicial do jogador que vai nessa posição.</li>
     <li>Digite o nome de um jogador de futebol com essa inicial e escale. Não vale repetir jogador: quem já foi escalado por alguém não pode entrar de novo. Vale qualquer nome pelo qual o jogador é conhecido: o Messi entra com M (Messi) ou com L (Lionel ou Leo Messi). O jogo sugere nomes de uma lista com mais de 1.600 jogadores, cada um com o overall do auge da carreira. Fora de posição o jogador perde pontos, e o overall do time é a média dos 11.</li>
-    <li>Dez números do quadro trazem, junto com a letra, uma <b>cartinha</b> (2 de cada um dos 5 tipos). Você pode usar na hora ou guardar para a próxima rodada.</li>
-    <li><b>Repetir letra</b> deixa você usar uma letra que já usou no seu time. <b>Trocar letra</b> deixa você escolher qualquer letra para a posição. <b>Trocar número</b> descarta a letra que saiu e você sorteia outro número. <b>Trocar posição</b> leva a letra que saiu para outra posição vazia. <b>Trocar jogadores</b> troca dois jogadores do seu time de lugar.</li>
+    <li>Oito números do quadro trazem, junto com a letra, uma <b>cartinha</b> (2 de cada um dos 4 tipos, explicados abaixo). Você pode usar na hora ou guardar para a próxima rodada.</li>
     <li>Se não lembrar de ninguém, dá para <b>passar a vez</b>, mas só <b>uma vez por partida</b> e você perde a letra.</li>
     <li>Quando todo mundo completar os 11, os times são comparados posição por posição e cada um vota no melhor time (não vale votar no seu).</li>
-  </ol></div>`;
+  </ol>
+  <div class="lbl" style="margin-top:14px">As cartinhas</div>
+  <div class="cardhelp">${["repeat","letter","reroll","pos"].map(k=>`<div class="ch"><span class="chi">${CARD_ICONS[k]}</span><div><b>${CARD_NAME[k]}</b><p>${CARD_DESC[k]}</p><small>Quando usar: ${CARD_WHEN[k].toLowerCase()}</small></div></div>`).join("")}</div>
+  <p class="note" style="margin:8px 0 0">Cada cartinha vale na rodada em que saiu e na seguinte. Depois disso, some da sua mão.</p>
+  </div>`;
 }
 function vHome(){
   const online = !!window.mqtt;
@@ -2335,12 +2362,12 @@ function handHTML(p, mine){
     const opts = S.ui.pick==="repeat" ? pastLetters(p) : AL.split("");
     picker = `<div class="stack" style="gap:6px"><span class="lbl">${S.ui.pick==="repeat"?"Escolha uma letra que você já usou no seu time":"Escolha qualquer letra"}</span>${opts.length?`<div class="letters">${opts.map(X=>`<button data-act="pickL" data-l="${X}">${X}</button>`).join("")}</div>`:'<p class="note" style="margin:0">Você ainda não escalou ninguém, então não tem letra para repetir.</p>'}</div>`;
   }
-  if(!hand.length) return `<div class="stack" style="gap:6px"><span class="lbl">Suas cartinhas</span><p class="note" style="margin:0">Nenhuma ainda. Dez números do seu quadro trazem uma cartinha junto com a letra.</p></div>`;
+  if(!hand.length) return `<div class="stack" style="gap:6px"><span class="lbl">Suas cartinhas</span><p class="note" style="margin:0">Nenhuma ainda. Oito números do seu quadro trazem uma cartinha junto com a letra.</p></div>`;
   return `<div class="stack" style="gap:8px"><span class="lbl">Suas cartinhas</span><div class="cards">${hand.map(c=>{
     const usable = mine && (c.t==="swap" ? teamCount(p)>=2 : c.t==="pos" ? !!pend && teamCount(p)<10 : !!p.aim && (c.t==="reroll" ? !!pend : (c.t==="repeat" ? pastLetters(p).length>0 : true)));
     const act = c.t==="reroll" ? "cReroll" : "cPick";
     const exp = c.r + 1 > r.round ? "vale até a próxima rodada" : "última rodada!";
-    return `<button class="card" ${usable?`data-act="${act}" data-k="${c.t}"`:"disabled"} aria-pressed="${S.ui.pick===c.t?"true":"false"}">${CARD_ICONS[c.t]}<b>${CARD_NAME[c.t]}</b><small>${exp}</small></button>`;
+    return `<button class="card" ${usable?`data-act="${act}" data-k="${c.t}"`:"disabled"} aria-pressed="${S.ui.pick===c.t?"true":"false"}">${CARD_ICONS[c.t]}<b>${CARD_NAME[c.t]}</b><span class="cdesc">${CARD_DESC[c.t]}</span><small>${exp}</small></button>`;
   }).join("")}</div>${picker}</div>`;
 }
 function actionHTML(p){
