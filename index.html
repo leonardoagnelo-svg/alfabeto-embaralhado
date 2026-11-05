@@ -390,6 +390,7 @@ const POS = [
   {id:"gol",l:"GOL",x:50,y:90}
 ];
 const CARD_ICONS = {
+  dey:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M8 3l-5 3 2 5 2-1v11h10V10l2 1 2-5-5-3c-.5 1.7-2 2.6-4 2.6S8.5 4.7 8 3z"/><text x="12" y="17.5" text-anchor="middle" font-size="7.5" font-weight="800" fill="currentColor" stroke="none" font-family="Montserrat,sans-serif">9</text></svg>',
   steal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>',
   expel:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="3" width="10" height="16" rx="2" fill="currentColor" opacity=".35"/><rect x="7" y="3" width="10" height="16" rx="2"/></svg>',
   block:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>',
@@ -2449,11 +2450,11 @@ function buildStart(room){
   const order = shuffle(ids);
   ids.forEach(id => {
     const board = shuffle(AL.split(""));
-    const cards = Array(26).fill(""), types = shuffle(["repeat","repeat","letter","letter","reroll","reroll","pos","pos","steal","expel","block","choosepos","injury","stealcard","skip"]);
+    const cards = Array(26).fill(""), types = shuffle(["repeat","repeat","letter","letter","reroll","reroll","pos","pos","steal","expel","block","choosepos","injury","stealcard","skip","dey"]);
     shuffle([...Array(26).keys()]).slice(0,types.length).forEach((i,k) => cards[i] = types[k]);
     r.players[id] = { name:r.players[id].name, joinedAt:r.players[id].joinedAt, ...(r.players[id].bot?{bot:true, level:r.players[id].level||"medio"}:{}), board, cards, revealed:[], team:{}, hand:[], aim:null, pending:null };
   });
-  Object.assign(r, { status:"playing", order, turn:order[0], round:1, votes:{}, log:[{t:Date.now(), text:"Começou! "+r.players[order[0]].name+" abre a partida."}] });
+  Object.assign(r, { status:"playing", order, turn:order[0], round:1, votes:{}, dey:null, log:[{t:Date.now(), text:"Começou! "+r.players[order[0]].name+" abre a partida."}] });
   return r;
 }
 async function startGame(){ try{ await store.set(buildStart(S.room)); }catch(e){ toast("Não deu para começar. Tente de novo."); } }
@@ -2480,7 +2481,7 @@ function nextTurnPatch(players){
   }
   return { status:"done", turn:null };
 }
-const CARD_NAME = {repeat:"Repetir letra", letter:"Trocar letra", reroll:"Trocar número", pos:"Trocar posição", swap:"Trocar jogadores", steal:"Roubar jogador", expel:"Expulsão", block:"Bloquear letras", choosepos:"Escolher a posição", injury:"Lesão", stealcard:"Roubar cartinha", skip:"Perde a vez"};
+const CARD_NAME = {repeat:"Repetir letra", letter:"Trocar letra", reroll:"Trocar número", pos:"Trocar posição", swap:"Trocar jogadores", steal:"Roubar jogador", expel:"Expulsão", block:"Bloquear letras", choosepos:"Escolher a posição", injury:"Lesão", stealcard:"Roubar cartinha", skip:"Perde a vez", dey:"Deyverson"};
 const CARD_DESC = {
   repeat:"Troca a letra da vez por uma letra que você já usou no seu time.",
   letter:"Você escolhe qualquer letra do alfabeto para a posição.",
@@ -2493,14 +2494,15 @@ const CARD_DESC = {
   choosepos:"Você escolhe a posição que o adversário vai ter que preencher na próxima vez dele.",
   injury:"Um jogador do adversário perde 10 de overall até o fim da partida.",
   stealcard:"Pega uma cartinha guardada na mão do adversário.",
-  skip:"O adversário pula a próxima jogada dele."
+  skip:"O adversário pula a próxima jogada dele.",
+  dey:"Você escolhe um adversário e uma posição, e o Deyverson entra no time dele. Se já tiver alguém lá, sai. Só existe um Deyverson por partida: quem tirar primeiro leva."
 };
 const CARD_WHEN = {
   repeat:"Depois de escolher a posição.",
   letter:"Depois de escolher a posição.",
   reroll:"Depois de abrir o número.",
   pos:"Depois de abrir o número.",
-  swap:"Na sua vez.", steal:"Na sua vez.", expel:"Na sua vez.", block:"Na sua vez.", choosepos:"Na sua vez.", injury:"Na sua vez.", stealcard:"Na sua vez.", skip:"Na sua vez."
+  swap:"Na sua vez.", steal:"Na sua vez.", expel:"Na sua vez.", block:"Na sua vez.", choosepos:"Na sua vez.", injury:"Na sua vez.", stealcard:"Na sua vez.", skip:"Na sua vez.", dey:"Na sua vez."
 };
 const validCards = (p, r=S.room) => (p.hand||[]).filter(c => c.r + 1 >= r.round);
 const hasCard = (p, t) => validCards(p).some(c => c.t===t);
@@ -2520,15 +2522,20 @@ async function reveal(idx){
   const id=actor(), p=S.room.players[id];
   if(S.room.turn!==id || p.pending || p.revealed.includes(idx)) return;
   if(!p.aim){ toast("Escolha primeiro a posição no campo."); return; }
-  const L=p.board[idx], c=(p.cards||[])[idx], revealed=[...p.revealed, idx];
+  const L=p.board[idx], revealed=[...p.revealed, idx];
+  let c=(p.cards||[])[idx], deyGone=null, deyFirst=false;
+  if(c==="dey"){ if(S.room.dey){ deyGone=pname(S.room.dey.by); c=""; } else deyFirst=true; }
   const isBlocked = (p.blocked||[]).includes(L);
   const patch = isBlocked ? { revealed } : { revealed, pending:{letter:L, idx} };
   if(c) patch.hand = [...validCards(p), {t:c, r:S.room.round}];
+  const deyExtra = deyFirst ? { dey:{by:id, at:Date.now()} } : {};
+  const deyTxt = deyGone ? " Achou a cartinha Deyverson, mas ela já tinha saído para "+deyGone+"." : "";
+  if(deyGone && !S.botActing) setTimeout(()=>showEvt("O Deyverson já tem dono", "Você achou a cartinha Deyverson, mas "+deyGone+" tirou primeiro. Ela não vale mais para ninguém.", "dey", "atk"), 60);
   if(isBlocked){
-    await write({ players:{[id]:patch}, log:logPatch(p.name+" abriu o nº "+(idx+1)+", mas a letra "+L+" está bloqueada. Abre outro número."+(c?" Ganhou a cartinha "+CARD_NAME[c]+".":"")) });
+    await write({ players:{[id]:patch}, ...deyExtra, log:logPatch(p.name+" abriu o nº "+(idx+1)+", mas a letra "+L+" está bloqueada. Abre outro número."+(c?" Ganhou a cartinha "+CARD_NAME[c]+".":"")+deyTxt) });
     if(!S.botActing){ if(c){ S.ui.newCard={t:c, blocked:L}; S.ui.pulse=true; render(); } else showEvt("Letra bloqueada", "A letra "+L+" foi bloqueada por um adversário. Abra outro número.", "block", "atk"); } return;
   }
-  await write({ players:{[id]:patch}, log:logPatch(p.name+" abriu o nº "+(idx+1)+" e tirou a letra "+L+(c?" e a cartinha "+CARD_NAME[c]+"!":"")) });
+  await write({ players:{[id]:patch}, ...deyExtra, log:logPatch(p.name+" abriu o nº "+(idx+1)+" e tirou a letra "+L+(c?" e a cartinha "+CARD_NAME[c]+"!":"")+(deyFirst?" Ninguém mais pode tirar o Deyverson.":"")+(deyGone?"."+deyTxt:"")) });
   if(c && !S.botActing){ S.ui.newCard={t:c}; S.ui.pulse=true; render(); }
 }
 function whoHas(name){
@@ -2588,7 +2595,9 @@ async function cardSwap(posId){
   await write({ players:{[id]:{ team:{[a]:slotFor(tb,a), [b]:slotFor(ta,b)}, hand }}, log:logPatch(p.name+" usou Trocar jogadores: "+ta.n+" foi para o "+lb+" e "+tb.n+" para o "+la) });
 }
 /* ---------- cartinhas de ataque ---------- */
-const ATK = ["steal","expel","block","choosepos","injury","stealcard","skip"];
+const ATK = ["steal","expel","block","choosepos","injury","stealcard","skip","dey"];
+const deySlots = o => POS.filter(x => !(o.aim===x.id && !o.team?.[x.id]));
+const deyPlaced = () => !!whoHas("Deyverson");
 const isAtk = t => ATK.includes(t);
 const others = () => S.room.order.filter(x => x!==actor());
 const pname = id => S.room.players[id]?.name || "?";
@@ -2600,6 +2609,7 @@ function atkTargets(k){
     if(k==="choosepos") return teamCount(o)<11 && !o.forced;
     if(k==="stealcard") return validCards(o).length>0;
     if(k==="block") return (o.blocked||[]).length < 26;
+    if(k==="dey") return !deyPlaced() && deySlots(o).length>0;
     return teamCount(o)<11;
   });
 }
@@ -2640,6 +2650,11 @@ async function atkDo(k, target, arg){
     const i=Math.floor(Math.random()*oh.length), c=oh.splice(i,1)[0];
     pl[id].hand=[...hand, {t:c.t, r:S.room.round}]; pl[target]={hand:oh};
     text=me.name+" usou Roubar cartinha e pegou a "+CARD_NAME[c.t]+" de "+o.name;
+  } else if(k==="dey"){
+    if(deyPlaced() || !POS.some(x=>x.id===arg)) return;
+    const old=o.team[arg], lb=POS.find(x=>x.id===arg).l;
+    pl[target]={team:{[arg]:{...slotFor({n:"Deyverson", l:"D"}, arg), o:lookup("Deyverson")?.ovr ?? 80, inj:null, dey:true}}};
+    text=me.name+" usou Deyverson: o Deyverson entrou no "+lb+" de "+o.name+(old?" e "+old.n+" saiu do time":"");
   } else if(k==="skip"){
     extra.skips={[target]:true};
     text=me.name+" usou Perde a vez: "+o.name+" vai pular a próxima jogada";
@@ -2657,11 +2672,12 @@ function atkHTML(p){
   }
   if(k==="steal") body = POS.filter(x=>o.team?.[x.id] && !(p.aim===x.id && !p.team?.[x.id])).map(x=>`<button class="btn" data-act="atkGo" data-a="${x.id}">${x.l}: pegar ${esc(o.team[x.id].n)} (${slotOvr(o.team[x.id])}) ${p.team?.[x.id] ? "e dar "+esc(p.team[x.id].n)+" ("+slotOvr(p.team[x.id])+")" : "para o seu "+x.l+" vazio"}</button>`).join("");
   else if(k==="expel" || k==="injury") body = POS.filter(x=>o.team?.[x.id] && (k!=="injury" || !o.team[x.id].inj)).map(x=>`<button class="btn" data-act="atkGo" data-a="${x.id}">${x.l}: ${esc(o.team[x.id].n)} (${slotOvr(o.team[x.id])})</button>`).join("");
+  else if(k==="dey") body = deySlots(o).map(x=>{ const t=o.team?.[x.id], v=effOvr(lookup("Deyverson"),x.id); return `<button class="btn" data-act="atkGo" data-a="${x.id}">${x.l}: ${t ? "tirar "+esc(t.n)+" ("+slotOvr(t)+")" : "vazio"} → Deyverson (${v})</button>`; }).join("");
   else if(k==="choosepos") body = POS.filter(x=>!o.team?.[x.id]).map(x=>`<button class="btn" data-act="atkGo" data-a="${x.id}">${x.l}</button>`).join("");
   else if(k==="block"){ const sel=a.letters||[], bl=o.blocked||[];
     body = `<div class="letters">${AL.split("").map(L=>`<button data-act="atkL" data-l="${L}" ${bl.includes(L)?"disabled":""} aria-pressed="${sel.includes(L)}" class="${sel.includes(L)?"on":""}">${L}</button>`).join("")}</div><button class="btn gold" data-act="atkGo" ${sel.length?"":"disabled"}>Bloquear ${sel.join(", ")||"letras"}</button>`; }
   else body = `<button class="btn gold" data-act="atkGo">Usar contra ${esc(o.name)}</button>`;
-  const hint = k==="steal" ? `O jogador vem para a mesma posição no seu time. Se você já tiver alguém lá, ele vai para ${esc(o.name)}; se a posição estiver vazia, ${esc(o.name)} fica sem ninguém nela.` : k==="block" ? `Escolha até 3 letras que ${esc(o.name)} não vai poder usar até o fim do jogo.` : k==="choosepos" ? `Escolha a posição que ${esc(o.name)} vai ter que preencher na próxima vez.` : "";
+  const hint = k==="steal" ? `O jogador vem para a mesma posição no seu time. Se você já tiver alguém lá, ele vai para ${esc(o.name)}; se a posição estiver vazia, ${esc(o.name)} fica sem ninguém nela.` : k==="block" ? `Escolha até 3 letras que ${esc(o.name)} não vai poder usar até o fim do jogo.` : k==="choosepos" ? `Escolha a posição que ${esc(o.name)} vai ter que preencher na próxima vez.` : k==="dey" ? `O Deyverson entra no time de ${esc(o.name)} na posição que você escolher. Quem estiver lá sai do time.` : "";
   return `<div class="atkbox"><b>${CARD_NAME[k]} contra ${esc(o.name)}</b>${hint?`<p class="note" style="margin:0">${hint}</p>`:""}<div class="stack" style="gap:6px">${body}</div><button class="btn ghost" data-act="atkCancel">Cancelar</button></div>`;
 }
 
@@ -2704,8 +2720,9 @@ async function botAttack(id){
   else if(k==="expel") arg=bestSlot(()=>true);
   else if(k==="injury") arg=bestSlot(x=>!o.team[x.id].inj);
   else if(k==="choosepos"){ const empty=POS.filter(x=>!o.team?.[x.id]).map(x=>x.id); arg=empty.includes("gol")?"gol":empty[Math.floor(Math.random()*empty.length)]; }
+  else if(k==="dey"){ const opts=deySlots(o).map(x=>x.id), filled=opts.filter(x=>o.team?.[x]).sort((a,b)=>slotOvr(o.team[b])-slotOvr(o.team[a])); arg=filled[0] || opts[0]; }
   else if(k==="block") arg=["R","M","C","D","A","S","L","P"].filter(L=>!(o.blocked||[]).includes(L)).sort(()=>Math.random()-0.5).slice(0,3);
-  if(["steal","expel","injury","choosepos"].includes(k) && !arg) return;
+  if(["steal","expel","injury","choosepos","dey"].includes(k) && !arg) return;
   await atkDo(k, target, arg); await sleep(900);
 }
 async function botTurn(id){
@@ -2791,7 +2808,7 @@ function rulesHTML(){
     <li>Cada jogador tem um quadro com os números de 1 a 26. Atrás deles estão as 26 letras do alfabeto, embaralhadas de um jeito diferente para cada um.</li>
     <li>Na sua vez, <b>escolha primeiro a posição</b> no campo (4-3-3). Depois abra um número: a letra que sair é a inicial do jogador que vai nessa posição.</li>
     <li>Digite o nome de um jogador de futebol com essa inicial e escale. Não vale repetir jogador: quem já foi escalado por alguém não pode entrar de novo. Vale qualquer nome pelo qual o jogador é conhecido: o Messi entra com M (Messi) ou com L (Lionel ou Leo Messi). O jogo sugere nomes de uma lista com mais de 1.600 jogadores, cada um com o overall do auge da carreira. Em posição parecida (volante e meia, lateral e zagueiro, ponta e centroavante, lateral trocado de lado) o jogador fica <b>adaptado</b> e perde 3 pontos. Fora de posição perde 8, e goleiro na linha ou jogador de linha no gol cai para 45. O overall do time é a média dos 11.</li>
-    <li>Quinze números do quadro trazem, junto com a letra, uma <b>cartinha</b>: 8 de ajuda (2 de cada) e 7 de ataque contra os adversários (1 de cada). Todas estão explicadas abaixo. Você pode usar na hora ou guardar para a próxima rodada.</li>
+    <li>Dezesseis números do quadro trazem, junto com a letra, uma <b>cartinha</b>: 8 de ajuda (2 de cada) e 8 de ataque contra os adversários (1 de cada). A cartinha <b>Deyverson</b> é única na partida: quem tirar primeiro leva, e os outros perdem a sua. Todas estão explicadas abaixo. Você pode usar na hora ou guardar para a próxima rodada.</li>
     <li>Se não lembrar de ninguém, dá para <b>passar a vez</b>, mas só <b>uma vez por partida</b> e você perde a letra.</li>
     <li>Quando todo mundo completar os 11, os times são comparados posição por posição e cada um vota no melhor time (não vale votar no seu).</li>
   </ol>
@@ -2886,7 +2903,7 @@ function handHTML(p, mine){
     const opts = (S.ui.pick==="repeat" ? pastLetters(p) : AL.split("")).filter(L=>!(p.blocked||[]).includes(L));
     picker = `<div class="stack" style="gap:6px"><span class="lbl">${S.ui.pick==="repeat"?"Escolha uma letra que você já usou no seu time":"Escolha qualquer letra"}</span>${opts.length?`<div class="letters">${opts.map(X=>`<button data-act="pickL" data-l="${X}">${X}</button>`).join("")}</div>`:'<p class="note" style="margin:0">Você ainda não escalou ninguém, então não tem letra para repetir.</p>'}</div>`;
   }
-  if(!hand.length) return `<div class="stack" style="gap:6px"><p class="note" style="margin:0">Nenhuma ainda. Quinze números do seu quadro trazem uma cartinha junto com a letra.</p></div>`;
+  if(!hand.length) return `<div class="stack" style="gap:6px"><p class="note" style="margin:0">Nenhuma ainda. Dezesseis números do seu quadro trazem uma cartinha junto com a letra.</p></div>`;
   return `<div class="stack" style="gap:8px"><div class="cards">${hand.map(c=>{
     const usable = mine && (isAtk(c.t) ? atkTargets(c.t).length>0 : c.t==="swap" ? teamCount(p)>=2 : c.t==="pos" ? !!pend && teamCount(p)<10 : !!p.aim && (c.t==="reroll" ? !!pend : (c.t==="repeat" ? pastLetters(p).length>0 : true)));
     const act = isAtk(c.t) ? "atk" : c.t==="reroll" ? "cReroll" : "cPick";
