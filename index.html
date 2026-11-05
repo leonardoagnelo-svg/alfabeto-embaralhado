@@ -2713,11 +2713,14 @@ function botPick(p, L, slot){
   const used=usedKeys(), out=[];
   for(const e of PL){
     if(used.has(e.key)) continue;
-    const i=e.norms.findIndex(n=>n.charAt(0).toUpperCase()===L); if(i<0) continue;
-    out.push({name:e.names[i], eff:effOvr(e,slot)});
+    const idx=e.norms.map((n,j)=>n.charAt(0).toUpperCase()===L?j:-1).filter(j=>j>=0); if(!idx.length) continue;
+    const i=idx.find(j=>lookup(e.names[j])===e); if(i===undefined) continue; /* nome ambíguo: seria lido como outro jogador */
+    out.push({name:e.names[i], eff:effOvr(e,slot), fit:fits(e,slot)});
   }
   if(!out.length) return null;
   out.sort((a,b)=>b.eff-a.eff);
+  /* modo Sugestões: o robô também só escala fora da posição se não houver ninguém da posição com essa letra */
+  if(hintMode()==="full" && out.some(x=>x.fit)){ const f=out.filter(x=>x.fit); out.length=0; out.push(...f); }
   const lvl=p.level||"medio";
   if(lvl==="craque") return out[Math.random()<0.8?0:Math.min(1,out.length-1)];
   if(lvl==="facil"){ const pool=out.filter(x=>x.eff>=60); const src=pool.length?pool:out; return src[Math.floor(Math.random()*Math.min(src.length,30))]; }
