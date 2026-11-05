@@ -2488,7 +2488,7 @@ const CARD_DESC = {
   reroll:"Descarta a letra que saiu e você abre outro número.",
   pos:"Leva a letra que saiu para outra posição vazia do campo.",
   swap:"Troca dois jogadores do seu time de lugar.",
-  steal:"Pega um jogador do adversário para a mesma posição do seu time. Se você já tiver alguém lá, ele vai para o adversário.",
+  steal:"Pega qualquer jogador do adversário e dá qualquer jogador seu em troca. Cada um entra no lugar do outro.",
   expel:"Tira um jogador do time do adversário. Ele vai ter que escalar a posição de novo.",
   block:"Escolha até 3 letras que o adversário não pode usar até o fim do jogo.",
   choosepos:"Você escolhe a posição que o adversário vai ter que preencher na próxima vez dele.",
@@ -2604,7 +2604,7 @@ const pname = id => S.room.players[id]?.name || "?";
 function atkTargets(k){
   const me=S.room.players[actor()];
   return others().filter(id => { const o=S.room.players[id];
-    if(k==="steal") return POS.some(x => o.team?.[x.id] && !(me.aim===x.id && !me.team?.[x.id]));
+    if(k==="steal") return teamCount(o)>0 && teamCount(me)>0;
     if(k==="expel" || k==="injury") return teamCount(o)>0 && (k!=="injury" || Object.values(o.team).some(t=>!t.inj));
     if(k==="choosepos") return teamCount(o)<11 && !o.forced;
     if(k==="stealcard") return validCards(o).length>0;
@@ -2621,14 +2621,10 @@ async function atkDo(k, target, arg){
   S.ui.atk=null;
   let pl={[id]:{hand}}, extra={}, text="";
   if(k==="steal"){
-    const mine=me.team[arg], his=o.team[arg]; if(!his) return;
-    pl[id].team={[arg]:{...slotFor(his,arg)}}; pl[target]={team:{[arg]: mine ? {...slotFor(mine,arg)} : null}};
-    text=me.name+" usou Roubar jogador: pegou "+his.n+" ("+POS.find(x=>x.id===arg).l+") de "+o.name+(mine?" e mandou "+mine.n+" no lugar":"");
-    if(!mine && teamCount(me)+1>=11){ /* time completo: encerra a vez */
-      Object.assign(pl[id], {pending:null, aim:null, forced:null});
-      const players=clone(S.room.players); players[id]={...me, team:{...me.team, [arg]:his}};
-      Object.assign(extra, nextTurnPatch(players));
-    }
+    const [hs, ms]=String(arg||"").split(">"), his=o.team[hs], mine=me.team[ms]; if(!his || !mine) return;
+    pl[id].team={[ms]:{...slotFor(his,ms), inj:his.inj||null}}; pl[target]={team:{[hs]:{...slotFor(mine,hs), inj:mine.inj||null}}};
+    const lh=POS.find(x=>x.id===hs).l, lm=POS.find(x=>x.id===ms).l;
+    text=me.name+" usou Roubar jogador: pegou "+his.n+" ("+lh+") de "+o.name+" e colocou no seu "+lm+"; em troca, "+mine.n+" foi para o "+lh+" de "+o.name;
   } else if(k==="expel"){
     const t=o.team[arg]; if(!t) return;
     pl[target]={team:{[arg]:null}};
@@ -2667,17 +2663,21 @@ function atkHTML(p){
   const k=a.k, tg=atkTargets(k), o=a.to && S.room.players[a.to];
   let body="";
   if(!a.to){
-    body = tg.length ? `<div class="row">${tg.map(id=>`<button class="btn" data-act="atkTo" data-id="${id}">${esc(pname(id))}</button>`).join("")}</div>` : '<p class="note" style="margin:0">Nenhum adversário pode ser alvo dessa cartinha agora.</p>';
+    body = tg.length ? `<div class="row">${tg.map(id=>`<button class="btn" data-act="atkTo" data-id="${id}">${esc(pname(id))}</button>`).join("")}</div>` : `<p class="note" style="margin:0">${k==="steal" && !teamCount(p) ? "Você precisa ter pelo menos um jogador no time para dar em troca." : "Nenhum adversário pode ser alvo dessa cartinha agora."}</p>`;
     return `<div class="atkbox"><b>${CARD_NAME[k]}:</b> escolha o adversário.${body}<button class="btn ghost" data-act="atkCancel">Cancelar</button></div>`;
   }
-  if(k==="steal") body = POS.filter(x=>o.team?.[x.id] && !(p.aim===x.id && !p.team?.[x.id])).map(x=>`<button class="btn" data-act="atkGo" data-a="${x.id}">${x.l}: pegar ${esc(o.team[x.id].n)} (${slotOvr(o.team[x.id])}) ${p.team?.[x.id] ? "e dar "+esc(p.team[x.id].n)+" ("+slotOvr(p.team[x.id])+")" : "para o seu "+x.l+" vazio"}</button>`).join("");
+  if(k==="steal"){
+    if(!a.his) body = POS.filter(x=>o.team?.[x.id]).map(x=>`<button class="btn" data-act="atkPick" data-a="${x.id}">${x.l}: pegar ${esc(o.team[x.id].n)} (${slotOvr(o.team[x.id])})</button>`).join("");
+    else { const his=o.team[a.his], lh=POS.find(x=>x.id===a.his).l;
+      body = `<p class="note" style="margin:0">Você vai pegar <b>${esc(his.n)}</b> (${lh}). Agora escolha quem você dá em troca: ele vai para o ${lh} de ${esc(o.name)} e ${esc(his.n)} entra no lugar dele no seu time.</p>` + POS.filter(x=>p.team?.[x.id]).map(x=>{ const v=slotFor(his,x.id).v; return `<button class="btn" data-act="atkGo" data-a="${a.his}>${x.id}">${x.l}: dar ${esc(p.team[x.id].n)} (${slotOvr(p.team[x.id])}) → ${esc(his.n)} vale ${v} aí</button>`; }).join("") + `<button class="btn ghost" data-act="atkPick" data-a="">Escolher outro jogador</button>`; }
+  }
   else if(k==="expel" || k==="injury") body = POS.filter(x=>o.team?.[x.id] && (k!=="injury" || !o.team[x.id].inj)).map(x=>`<button class="btn" data-act="atkGo" data-a="${x.id}">${x.l}: ${esc(o.team[x.id].n)} (${slotOvr(o.team[x.id])})</button>`).join("");
   else if(k==="dey") body = deySlots(o).map(x=>{ const t=o.team?.[x.id], v=effOvr(lookup("Deyverson"),x.id); return `<button class="btn" data-act="atkGo" data-a="${x.id}">${x.l}: ${t ? "tirar "+esc(t.n)+" ("+slotOvr(t)+")" : "vazio"} → Deyverson (${v})</button>`; }).join("");
   else if(k==="choosepos") body = POS.filter(x=>!o.team?.[x.id]).map(x=>`<button class="btn" data-act="atkGo" data-a="${x.id}">${x.l}</button>`).join("");
   else if(k==="block"){ const sel=a.letters||[], bl=o.blocked||[];
     body = `<div class="letters">${AL.split("").map(L=>`<button data-act="atkL" data-l="${L}" ${bl.includes(L)?"disabled":""} aria-pressed="${sel.includes(L)}" class="${sel.includes(L)?"on":""}">${L}</button>`).join("")}</div><button class="btn gold" data-act="atkGo" ${sel.length?"":"disabled"}>Bloquear ${sel.join(", ")||"letras"}</button>`; }
   else body = `<button class="btn gold" data-act="atkGo">Usar contra ${esc(o.name)}</button>`;
-  const hint = k==="steal" ? `O jogador vem para a mesma posição no seu time. Se você já tiver alguém lá, ele vai para ${esc(o.name)}; se a posição estiver vazia, ${esc(o.name)} fica sem ninguém nela.` : k==="block" ? `Escolha até 3 letras que ${esc(o.name)} não vai poder usar até o fim do jogo.` : k==="choosepos" ? `Escolha a posição que ${esc(o.name)} vai ter que preencher na próxima vez.` : k==="dey" ? `O Deyverson entra no time de ${esc(o.name)} na posição que você escolher. Quem estiver lá sai do time.` : "";
+  const hint = k==="steal" ? (a.his ? "" : `Escolha qualquer jogador de ${esc(o.name)}. Depois você escolhe qualquer jogador seu para dar em troca.`) : k==="block" ? `Escolha até 3 letras que ${esc(o.name)} não vai poder usar até o fim do jogo.` : k==="choosepos" ? `Escolha a posição que ${esc(o.name)} vai ter que preencher na próxima vez.` : k==="dey" ? `O Deyverson entra no time de ${esc(o.name)} na posição que você escolher. Quem estiver lá sai do time.` : "";
   return `<div class="atkbox"><b>${CARD_NAME[k]} contra ${esc(o.name)}</b>${hint?`<p class="note" style="margin:0">${hint}</p>`:""}<div class="stack" style="gap:6px">${body}</div><button class="btn ghost" data-act="atkCancel">Cancelar</button></div>`;
 }
 
@@ -2716,7 +2716,7 @@ async function botAttack(id){
   const o=S.room.players[target], me=S.room.players[id];
   let arg=null;
   const bestSlot = filter => POS.filter(x=>o.team?.[x.id] && filter(x)).sort((a,b)=>slotOvr(o.team[b.id])-slotOvr(o.team[a.id]))[0]?.id;
-  if(k==="steal") arg=bestSlot(x=>!(me.aim===x.id && !me.team?.[x.id]) && (!me.team?.[x.id] || slotOvr(o.team[x.id])>slotOvr(me.team[x.id])));
+  if(k==="steal"){ let best=null; for(const h of POS.filter(x=>o.team?.[x.id])) for(const m of POS.filter(x=>me.team?.[x.id])){ const gain=slotFor(o.team[h.id],m.id).v-slotOvr(me.team[m.id]); if(!best || gain>best.g) best={g:gain, a:h.id+">"+m.id}; } arg=best && best.g>0 ? best.a : null; }
   else if(k==="expel") arg=bestSlot(()=>true);
   else if(k==="injury") arg=bestSlot(x=>!o.team[x.id].inj);
   else if(k==="choosepos"){ const empty=POS.filter(x=>!o.team?.[x.id]).map(x=>x.id); arg=empty.includes("gol")?"gol":empty[Math.floor(Math.random()*empty.length)]; }
@@ -3083,7 +3083,8 @@ async function act(a, d={}){
       case "cPick": S.ui.pick = S.ui.pick===d.k ? null : d.k; S.ui.swapA=null; if(d.k==="pos" && S.ui.pick) S.ui.sheet=false; return render();
       case "reaim": return cardPos(d.pos);
       case "atk": S.ui.atk = S.ui.atk?.k===d.k ? null : {k:d.k}; S.ui.pick=null; return render();
-      case "atkTo": S.ui.atk = {...S.ui.atk, to:d.id, letters:[]}; return render();
+      case "atkTo": S.ui.atk = {...S.ui.atk, to:d.id, letters:[], his:null}; return render();
+      case "atkPick": S.ui.atk = {...S.ui.atk, his:d.a||null}; return render();
       case "atkL": { const a=S.ui.atk; const set=new Set(a.letters||[]); set.has(d.l)?set.delete(d.l):(set.size<3&&set.add(d.l)); a.letters=[...set]; return render(); }
       case "atkGo": S.ui.sheet=false; return atkDo(S.ui.atk.k, S.ui.atk.to, S.ui.atk.k==="block" ? S.ui.atk.letters : d.a);
       case "atkCancel": S.ui.atk=null; return render();
