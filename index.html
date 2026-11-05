@@ -166,6 +166,75 @@ input::placeholder{color:#6f8a79}
 .team.leader{border-color:var(--ok)}
 .votebar{height:6px;border-radius:999px;background:#223a2e;overflow:hidden}
 .votebar span{display:block;height:100%;background:var(--ok)}
+
+/* passos da jogada */
+.stepper{list-style:none;margin:0 0 10px;padding:0;display:flex;gap:6px}
+.stepper li{flex:1;display:flex;align-items:center;gap:6px;font-family:var(--f-label);text-transform:uppercase;letter-spacing:.06em;font-size:12px;color:var(--muted);background:var(--panel);border:1px solid #223a2e;border-radius:999px;padding:5px 8px}
+.stepper li span{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;background:#223a2e;color:var(--chalk);font-size:11px}
+.stepper li.now{border-color:var(--flag);color:var(--chalk)} .stepper li.now span{background:var(--flag)}
+.stepper li.done span{background:var(--ok);color:var(--ink)}
+.stage-h{font-size:22px}
+.poschip{font-family:var(--f-display);font-size:18px;background:var(--flag);color:#fff;border-radius:8px;padding:2px 10px;display:inline-flex;gap:8px;align-items:center}
+.linkbtn{background:none;border:0;color:var(--gold-hi);text-decoration:underline;padding:4px 0;font-size:13.5px;text-align:left}
+.poschip .linkbtn{color:#fff;font-family:var(--f-body);font-size:12px}
+.btn.big{padding:14px 16px;font-size:17px}
+.game2{display:grid;grid-template-columns:1fr;gap:14px}
+.sidepitch{display:none}
+@media (min-width:860px){.game2{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);align-items:start}.game2.playing .sidepitch{display:flex}}
+details.fold summary{cursor:pointer;color:var(--muted);font-size:13.5px;padding:4px 0}
+details.fold[open] summary{margin-bottom:8px}
+.rules .quick{list-style:none;margin:8px 0;padding:0;display:flex;flex-direction:column;gap:4px}
+/* barra e gaveta de cartinhas */
+body.withbar{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+.cardbar{position:fixed;left:0;right:0;bottom:0;z-index:15;display:flex;gap:12px;align-items:center;padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));background:rgba(12,23,18,.96);border-top:1px solid #2c4a3a;backdrop-filter:blur(6px)}
+.cardbtn{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(180deg,var(--gold-hi),var(--gold));color:var(--ink);border-color:var(--gold-deep)}
+.cardbtn:disabled{background:var(--panel2);color:var(--muted);border-color:#2c4a3a;opacity:1}
+.cardicon svg{width:18px;height:18px;display:block}
+.atkdot{background:var(--flag);color:#fff;border-radius:999px;padding:0 7px;font-size:11.5px}
+.cardhint{min-width:0}
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:30}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:31;max-height:82vh;overflow:auto;background:var(--panel);border-top:2px solid var(--gold);border-radius:18px 18px 0 0;padding:16px max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:12px;max-width:720px;margin:0 auto}
+/* aviso grande */
+.evt{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:40;width:min(520px,calc(100% - 32px));display:flex;gap:12px;align-items:flex-start;background:var(--chalk);color:var(--night);border-radius:14px;padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.45);cursor:pointer;animation:evtin .25s ease-out}
+.evt.atk{border-left:6px solid var(--flag)} .evt.help{border-left:6px solid var(--gold)}
+.evt b{font-size:16px} .evt p{margin:2px 0 0;font-size:14px}
+.evti{flex:0 0 auto;width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(170deg,var(--gold-hi),var(--gold));color:var(--ink)}
+.evt.atk .evti{background:linear-gradient(170deg,#ffb199,#ff6a3d)}
+.evti svg{width:24px;height:24px}
+@keyframes evtin{from{transform:translate(-50%,-12px);opacity:0}}
+.injb{position:absolute;bottom:-8px;right:-6px;font-family:var(--f-display);font-size:11px;background:#d9342b;color:#fff;border-radius:5px;padding:0 4px}
+.seg{display:flex;gap:4px;background:var(--night);border:1px solid #2c4a3a;border-radius:10px;padding:3px}
+.seg button{flex:1;border:0;background:transparent;border-radius:8px;padding:8px 4px;font-weight:600;font-size:13.5px}
+.seg button[aria-pressed="true"]{background:var(--chalk);color:var(--night)}
+/* tela de vitória */
+.hero-win{position:relative;overflow:hidden;text-align:center;background:radial-gradient(120% 90% at 50% 0%,rgba(230,184,76,.35),transparent 60%),var(--panel);border:1px solid var(--gold-deep);border-radius:18px;padding:26px 16px 18px;display:flex;flex-direction:column;align-items:center;gap:8px}
+.hero-win h1{font-size:clamp(40px,11vw,72px);line-height:1;text-transform:uppercase;color:var(--gold-hi)}
+.trophy{width:72px;height:72px;color:var(--gold-hi);animation:pop .6s ease-out}
+.trophy svg{width:100%;height:100%}
+@keyframes pop{0%{transform:scale(.4)}70%{transform:scale(1.15)}}
+.podium{list-style:none;margin:8px 0 0;padding:0;width:min(420px,100%);display:flex;flex-direction:column;gap:6px}
+.podium li{display:flex;align-items:center;gap:10px;background:var(--panel2);border-radius:10px;padding:8px 12px}
+.podium li.first{border:1px solid var(--gold)}
+.podium .pl{font-family:var(--f-display);font-size:20px;width:34px;text-align:left}
+.podium .pn{flex:1;text-align:left;font-weight:700}
+.confetti{position:absolute;inset:0;pointer-events:none}
+.confetti i{position:absolute;top:-12px;left:var(--x);width:8px;height:12px;background:var(--c);border-radius:2px;animation:fall 2.8s var(--d) ease-in forwards}
+@keyframes fall{to{transform:translateY(420px) rotate(540deg);opacity:0}}
+/* cards de como jogar */
+.onb-bg{position:fixed;inset:0;z-index:50;background:rgba(5,10,8,.82);display:grid;place-items:center;padding:16px}
+.onb{width:min(420px,100%);background:var(--panel);border:1px solid var(--gold-deep);border-radius:18px;padding:22px 18px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.onb h2{font-size:32px}.onb p{margin:0;color:var(--chalk);font-size:16px;max-width:34ch}
+.dots{display:flex;gap:6px}.dots i{width:8px;height:8px;border-radius:50%;background:#2c4a3a}.dots i.on{background:var(--gold)}
+.onbv{height:110px;display:flex;align-items:center;justify-content:center;gap:8px}
+.onbv span{font-family:var(--f-display);font-size:22px;border-radius:10px;padding:10px 14px;background:var(--panel2);border:1px solid #2c4a3a}
+.onbv .hl{background:var(--flag);border-color:var(--flag);color:#fff}
+.pitchv{background:repeating-linear-gradient(180deg,var(--grass) 0 20px,var(--grass2) 20px 40px);border-radius:12px;padding:0 14px}
+.namev .bl{background:var(--flag);color:#fff;font-size:40px;padding:6px 18px}
+.namev .nm{font-family:var(--f-body);font-weight:700;font-size:18px}.namev .nm b{background:#f3d27a;color:#2a1d02;border-radius:4px;padding:0 4px;margin-right:4px}
+.cardsv span{width:56px;height:70px;display:grid;place-items:center;padding:0}.cardsv span svg{width:28px;height:28px}
+.cardsv .g{background:linear-gradient(170deg,var(--gold-hi),var(--gold));color:var(--ink)}.cardsv .o{background:linear-gradient(170deg,#ffb199,#ff6a3d);color:#2a0d04}
+.trophyv{color:var(--gold-hi)}.trophyv svg{width:90px;height:90px}
+
 .sugg{display:flex;flex-wrap:wrap;gap:6px}
 .sugg button{border:1px solid #2c4a3a;background:var(--panel2);border-radius:9px;padding:6px 10px;text-align:left;display:flex;flex-direction:column;line-height:1.15;max-width:100%}
 .sugg button b{font-weight:700;font-size:14px}
@@ -1988,13 +2057,17 @@ function suggestions(letter, draft, slot){
   out.sort((a,b) => (b.fit-a.fit) || (b.e.ovr-a.e.ovr) || a.name.localeCompare(b.name, "pt"));
   return out.slice(0, 8);
 }
+const hintMode = () => S.room?.hints || "auto";
 function suggHTML(p){
+  if(hintMode()==="off") return "";
+  if(hintMode()==="auto" && normName(S.ui.draft).length<3) return `<p class="note" style="margin:0">${S.ui.draft ? "Continue digitando: com 3 letras aparecem nomes parecidos." : "Pense num jogador e comece a digitar."}</p>`;
   const pend=p.pending; if(!pend || !p.aim) return "";
   const list = suggestions(pend.letter, S.ui.draft, p.aim);
   if(!list.length) return `<p class="note" style="margin:0">${S.ui.draft ? "Nenhum jogador da lista com esse começo. Se ele existe, pode escalar assim mesmo." : "Nenhum jogador da lista com essa letra. Se você lembrar de algum, pode escalar assim mesmo."}</p>`;
   return `<span class="lbl">Sugestões com ${esc(pend.letter)}</span><div class="sugg">${list.map(x=>`<button data-act="sugg" data-n="${esc(x.name)}" class="${x.fit?"fit":""}"><b><span class="ovrb ${ovrTier(x.e.ovr)}">${x.e.ovr}</span> ${esc(x.name)}</b><small>${x.name!==x.e.names[0]?esc(x.e.names[0])+" · ":""}${esc(posText(x.e))}</small></button>`).join("")}</div>`;
 }
 function fitHTML(p){
+  if(hintMode()==="off") return "";
   const name=S.ui.draft.trim(); if(!name || !p.aim) return "";
   const e=lookup(name), lab=POS.find(x=>x.id===p.aim).l;
   if(!e) return name.length<3 ? "" : `<span class="fit unk">Não está na nossa lista. Vale se a galera concordar, e entra com overall ${UNKNOWN_OVR}.</span>`;
@@ -2029,7 +2102,7 @@ function subscribe(){
     if(!meta?.fromCache){ clearTimeout(netTimer); S.ui.net=""; }
     if(!data){ return; }
     const prevTurn = S.room?.turn;
-    const la = data.lastAtk; if(la && la.at!==S.ui.seenAtk){ S.ui.seenAtk=la.at; if(S.mode==="online" && la.to===S.me && Date.now()-la.at<60000) setTimeout(()=>toast("Contra você! "+la.text), 50); }
+    const la = data.lastAtk; if(la && la.at!==S.ui.seenAtk){ const first=S.ui.seenAtk===undefined; S.ui.seenAtk=la.at; const tp=data.players?.[la.to]; if(!first && tp && !tp.bot && (S.mode==="local" || la.to===S.me) && Date.now()-la.at<60000) setTimeout(()=>showEvt(S.mode==="local"?"Ataque contra "+tp.name+"!":"Ataque contra você!", la.text, la.k, "atk"), 50); }
     S.room = data;
     if(data.status==="lobby") S.screen="lobby";
     else if(data.status==="playing") S.screen="game";
@@ -2118,7 +2191,7 @@ async function createRoom(){
   if(!code){ S.ui.err="Não consegui criar a sala agora. Tente de novo."; return render(); }
   store=hostStore(mq, code, null);
   await store.set({ code, hostId:S.me, status:"lobby", createdAt:Date.now(), cardUses:2,
-    players:{[S.me]:{name, joinedAt:Date.now()}}, order:[], turn:null, round:0, log:[], votes:{} });
+    players:{[S.me]:{name, joinedAt:Date.now()}}, order:[], turn:null, round:0, log:[], votes:{}, hints:"auto" });
   lsSet("ae_last", code);
   S.code=code; S.ui.err=""; subscribe();
 }
@@ -2225,11 +2298,27 @@ function vMural(){
   <div class="stack" style="gap:16px">${focusFirst.map(card).join("")}</div>`;
 }
 
+/* ---------- cards de como jogar ---------- */
+const ONB = [
+  {t:"Escolha a posição", d:"Na sua vez, primeiro toque na posição do campo que você quer preencher.", v:`<div class="onbv pitchv"><span>GOL</span><span class="hl">CA</span><span>ZAG</span></div>`},
+  {t:"Abra um número", d:"Atrás de cada número tem uma letra escondida. Ela vai ser a inicial do seu jogador.", v:`<div class="onbv tilesv"><span>7</span><span>12</span><span class="hl">K</span><span>3</span></div>`},
+  {t:"Escale um craque", d:"Digite um jogador com essa letra. Não vale repetir jogador, e fora de posição ele perde pontos de overall.", v:`<div class="onbv namev"><span class="bl">K</span><span class="nm"><b>95</b> Kaká</span></div>`},
+  {t:"Use as cartinhas", d:"Alguns números trazem cartinhas. As douradas ajudam você. As laranjas atacam o adversário: roubar, expulsar, lesionar…", v:`<div class="onbv cardsv"><span class="g">${CARD_ICONS.letter}</span><span class="o">${CARD_ICONS.injury}</span><span class="o">${CARD_ICONS.steal}</span></div>`},
+  {t:"Quem ganha?", d:"Com os 11 escalados, vence o time com maior overall. Depois publique no mural e deixe a galera votar.", v:`<div class="onbv trophyv">${'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>'}</div>`}
+];
+function onbHTML(){
+  const i=S.ui.onb; if(i==null) return "";
+  const s=ONB[i], last=i===ONB.length-1;
+  return `<div class="onb-bg"><div class="onb" role="dialog" aria-label="Como jogar"><span class="lbl">Como jogar · ${i+1} de ${ONB.length}</span>${s.v}<h2>${s.t}</h2><p>${s.d}</p>
+    <div class="dots">${ONB.map((_,k)=>`<i class="${k===i?"on":""}"></i>`).join("")}</div>
+    <div class="row" style="justify-content:space-between;width:100%"><button class="btn ghost" data-act="onbEnd">${last?"Fechar":"Pular"}</button>${i>0?`<button class="btn" data-act="onbPrev">Voltar</button>`:""}<button class="btn gold" data-act="${last?"onbEnd":"onbNext"}">${last?"Bora jogar":"Próximo"}</button></div></div></div>`;
+}
+
 function startLocal(){
   const names = S.ui.localNames; if(names.length<2){ S.ui.err="Adicione pelo menos 2 jogadores."; return render(); }
   S.mode="local"; store=localStore(); S.code=null;
   const players={}; names.forEach((n,i)=>players[(n.bot?"bot":"l")+i]={name:n.name, joinedAt:i, ...(n.bot?{bot:true, level:n.level}:{})});
-  const room={ code:null, hostId:"local", status:"lobby", createdAt:Date.now(), cardUses:2, players, order:[], turn:null, round:0, log:[], votes:{} };
+  const room={ code:null, hostId:"local", status:"lobby", createdAt:Date.now(), cardUses:2, players, order:[], turn:null, round:0, log:[], votes:{}, hints:S.ui.hints||"auto" };
   store.set(buildStart(room)); S.ui.err=""; subscribe();
 }
 function buildStart(room){
@@ -2315,10 +2404,10 @@ async function reveal(idx){
   if(c) patch.hand = [...validCards(p), {t:c, r:S.room.round}];
   if(isBlocked){
     await write({ players:{[id]:patch}, log:logPatch(p.name+" abriu o nº "+(idx+1)+", mas a letra "+L+" está bloqueada. Abre outro número."+(c?" Ganhou a cartinha "+CARD_NAME[c]+".":"")) });
-    toast("A letra "+L+" está bloqueada para você. Abra outro número."); return;
+    if(!S.botActing) showEvt("Letra bloqueada", "A letra "+L+" foi bloqueada por um adversário. Abra outro número.", "block", "atk"); return;
   }
   await write({ players:{[id]:patch}, log:logPatch(p.name+" abriu o nº "+(idx+1)+" e tirou a letra "+L+(c?" e a cartinha "+CARD_NAME[c]+"!":"")) });
-  if(c) toast("Você ganhou a cartinha "+CARD_NAME[c]+": "+CARD_DESC[c]+" Vale nesta rodada e na próxima.");
+  if(c && !S.botActing) showEvt("Você ganhou a cartinha "+CARD_NAME[c]+"!", CARD_DESC[c]+" Ela está no botão Cartinhas, embaixo, e vale nesta rodada e na próxima.", c, isAtk(c)?"atk":"help");
 }
 function whoHas(name){
   const k=playerKey(name);
@@ -2391,7 +2480,7 @@ function atkTargets(k){
     return teamCount(o)<11;
   });
 }
-function atkNote(to, text){ return { lastAtk:{to, text, at:Date.now()} }; }
+function atkNote(to, text, k){ return { lastAtk:{to, text, k, at:Date.now()} }; }
 async function atkDo(k, target, arg){
   const id=actor(), me=S.room.players[id], o=S.room.players[target];
   if(S.room.turn!==id || !o) return;
@@ -2432,8 +2521,8 @@ async function atkDo(k, target, arg){
     extra.skips={[target]:true};
     text=me.name+" usou Perde a vez: "+o.name+" vai pular a próxima jogada";
   }
-  await write({ players:pl, ...extra, log:logPatch(text), ...atkNote(target, text) });
-  toast("Feito! "+text.replace(me.name+" usou ",""));
+  await write({ players:pl, ...extra, log:logPatch(text), ...atkNote(target, text, k) });
+  if(!S.botActing) showEvt("Cartinha usada!", text.replace(me.name+" usou ",""), k, "atk");
 }
 function atkHTML(p){
   const a=S.ui.atk; if(!a) return "";
@@ -2563,6 +2652,8 @@ function render(){
   const a=document.activeElement, keep = a && a.id ? {id:a.id, s:a.selectionStart, e:a.selectionEnd} : null;
   const app=document.getElementById("app");
   app.innerHTML = S.screen==="mural" ? vMural() : S.screen==="home" ? vHome() : S.screen==="local" ? vLocal() : S.screen==="lobby" ? vLobby() : S.screen==="game" ? vGame() : vDone();
+  app.insertAdjacentHTML("beforeend", evtHTML() + onbHTML());
+  document.body.classList.toggle("withbar", !!app.querySelector(".cardbar"));
   if(keep){ const el=document.getElementById(keep.id); if(el){ el.focus(); try{ if(keep.s!=null) el.setSelectionRange(keep.s,keep.e); }catch(e){} } }
 }
 function titleHTML(){
@@ -2571,7 +2662,10 @@ function titleHTML(){
   return '<span>'+w1+'</span><br><span class="scr">'+w2.split("").map((c,i)=>'<span style="--r:'+rot(i)+'">'+c+'</span>').join("")+'</span>';
 }
 function rulesHTML(){
-  return `<div class="panel rules"><div class="lbl">Como funciona</div><ol>
+  return `<div class="panel rules"><div class="lbl">Como funciona</div>
+  <ul class="quick"><li><b>1.</b> Escolha a posição no campo.</li><li><b>2.</b> Abra um número e veja a letra.</li><li><b>3.</b> Escale um jogador com essa inicial.</li><li><b>4.</b> Use as cartinhas para se ajudar ou atrapalhar os outros.</li><li><b>5.</b> Vence o time com maior overall.</li></ul>
+  <button class="btn" data-act="onb">Ver como jogar em 5 passos</button>
+  <details class="fold"><summary>Regras completas</summary><ol>
     <li>Cada jogador tem um quadro com os números de 1 a 26. Atrás deles estão as 26 letras do alfabeto, embaralhadas de um jeito diferente para cada um.</li>
     <li>Na sua vez, <b>escolha primeiro a posição</b> no campo (4-3-3). Depois abra um número: a letra que sair é a inicial do jogador que vai nessa posição.</li>
     <li>Digite o nome de um jogador de futebol com essa inicial e escale. Não vale repetir jogador: quem já foi escalado por alguém não pode entrar de novo. Vale qualquer nome pelo qual o jogador é conhecido: o Messi entra com M (Messi) ou com L (Lionel ou Leo Messi). O jogo sugere nomes de uma lista com mais de 1.600 jogadores, cada um com o overall do auge da carreira. Em posição parecida (volante e meia, lateral e zagueiro, ponta e centroavante, lateral trocado de lado) o jogador fica <b>adaptado</b> e perde 3 pontos. Fora de posição perde 8, e goleiro na linha ou jogador de linha no gol cai para 45. O overall do time é a média dos 11.</li>
@@ -2584,7 +2678,7 @@ function rulesHTML(){
   <div class="lbl" style="margin-top:14px">Cartinhas de ataque (1 de cada)</div>
   <div class="cardhelp">${ATK.map(k=>`<div class="ch"><span class="chi atk">${CARD_ICONS[k]}</span><div><b>${CARD_NAME[k]}</b><p>${CARD_DESC[k]}</p><small>Quando usar: na sua vez, sem gastar a jogada.</small></div></div>`).join("")}</div>
   <p class="note" style="margin:8px 0 0">Cada cartinha vale na rodada em que saiu e na seguinte. Depois disso, some da sua mão. Quem recebe um ataque é avisado na hora.</p>
-  </div>`;
+  </details></div>`;
 }
 function vHome(){
   const online = !!window.mqtt;
@@ -2619,6 +2713,7 @@ function vLocal(){
     <div class="row" style="flex-wrap:nowrap"><input id="localDraft" maxlength="18" placeholder="Nome do jogador" value="${esc(S.ui.localDraft)}"><button class="btn" data-act="addLocal">Adicionar</button></div>
     <div class="stack" style="gap:6px"><span class="lbl">Adicionar robô</span><div class="row">${Object.entries(BOT_LEVEL).map(([k,v])=>`<button class="btn" data-act="addBotLocal" data-l="${k}">Robô ${v}</button>`).join("")}</div></div>
     <ul class="plist">${S.ui.localNames.map((n,i)=>`<li><span>${esc(n.name)}${n.bot?` <span class="lbl">robô ${BOT_LEVEL[n.level]}</span>`:""}</span><button class="btn ghost" data-act="rmLocal" data-i="${i}" aria-label="Remover ${esc(n.name)}">Remover</button></li>`).join("") || '<li class="note">Ninguém ainda.</li>'}</ul>
+    <div class="stack" style="gap:6px"><span class="lbl">Ajuda para escalar</span><div class="seg">${[["off","Sem dicas"],["auto","Autocompletar"],["full","Sugestões"]].map(([k,v])=>`<button data-act="hintsLocal" data-v="${k}" aria-pressed="${(S.ui.hints||"auto")===k}">${v}</button>`).join("")}</div><p class="note" style="margin:0">${({off:"Ninguém vê nomes: cada um tem que lembrar e digitar.",auto:"Os nomes aparecem só depois de digitar 3 letras.",full:"Mostra sugestões de jogadores assim que a letra sai."})[(S.ui.hints||"auto")]}</p></div>
     <div class="err" role="alert">${esc(S.ui.err)}</div>
     <button class="btn gold" data-act="startLocal" ${S.ui.localNames.length<2?"disabled":""}>Começar partida</button>
   </div>`;
@@ -2632,6 +2727,7 @@ function vLobby(){
     <div class="panel stack">
       <div><h2 style="font-size:30px">Esperando a galera</h2><p class="note" style="margin:6px 0 0">Passe o código <b>${esc(r.code)}</b> para os amigos. Eles abrem esta mesma página, colocam o nome e entram.</p></div>
       <ul class="plist">${ids.map(id=>`<li><span>${esc(r.players[id].name)}${id===S.me?" (você)":""}${r.players[id].bot?` <span class="lbl">robô ${BOT_LEVEL[r.players[id].level]||""}</span>`:""}</span>${id===r.hostId?'<span class="lbl">anfitrião</span>':""}${host && r.players[id].bot?`<button class="btn ghost" data-act="rmBotRoom" data-id="${id}">Remover</button>`:""}</li>`).join("")}</ul>
+      ${host ? `<div class="stack" style="gap:6px"><span class="lbl">Ajuda para escalar</span><div class="seg">${[["off","Sem dicas"],["auto","Autocompletar"],["full","Sugestões"]].map(([k,v])=>`<button data-act="hintsRoom" data-v="${k}" aria-pressed="${(r.hints||"auto")===k}">${v}</button>`).join("")}</div><p class="note" style="margin:0">${({off:"Ninguém vê nomes: cada um tem que lembrar e digitar.",auto:"Os nomes aparecem só depois de digitar 3 letras.",full:"Mostra sugestões de jogadores assim que a letra sai."})[(r.hints||"auto")]}</p></div>` : `<p class="note" style="margin:0">Ajuda para escalar: <b>${({off:"Sem dicas",auto:"Autocompletar",full:"Sugestões"})[r.hints||"auto"]}</b></p>`}
       ${host ? `<div class="stack" style="gap:6px"><span class="lbl">Adicionar robô</span><div class="row">${Object.entries(BOT_LEVEL).map(([k,v])=>`<button class="btn" data-act="addBotRoom" data-l="${k}">Robô ${v}</button>`).join("")}</div><p class="note" style="margin:0">Os robôs jogam pelo seu celular, então deixe o jogo aberto até o fim.</p></div>` : ""}
       ${host ? `<button class="btn gold" data-act="start">Começar com ${ids.length} jogador${ids.length>1?"es":""}</button>` : '<p class="note">O anfitrião começa a partida quando todos entrarem.</p>'}
     </div>
@@ -2649,7 +2745,7 @@ function pitchHTML(p, opts={}){
       const act = mode==="swap" ? "swapsel" : mode==="pos" ? "reaim" : "aim";
       const sel = mode==="swap" && S.ui.swapA===pos.id;
       return `<button class="slot ${t?"full":""} ${t&&t.ok===false?"off":""} ${t&&t.a?"adapt":""} ${can?"can":""} ${aimed||sel?"aim":""}" ${can?`data-act="${act}" data-pos="${pos.id}"`:"disabled"} style="left:${pos.x}%;top:${pos.y}%" aria-pressed="${aimed?"true":"false"}" aria-label="${pos.l}${t?": "+esc(t.n):" vazia"}">
-        ${t?`<span class="lt">${esc(t.l)}</span><span class="ov ${ovrTier(slotOvr(t))}">${slotOvr(t)}</span>`:""}<span class="pos">${pos.l}${t&&t.ok===false?(t.a?" · adapt.":" · fora"):""}${t&&t.inj?" · lesão":""}</span>${t?`<span class="nm">${esc(t.n)}</span>`:""}${aimed && pend?`<span class="nm">${esc(pend.letter)}…</span>`:""}</button>`;
+        ${t?`<span class="lt">${esc(t.l)}</span><span class="ov ${ovrTier(slotOvr(t))}">${slotOvr(t)}</span>${t.inj?'<span class="injb" title="Lesionado: -10 de overall">−10</span>':""}`:""}<span class="pos">${pos.l}${t&&t.ok===false?(t.a?" · adapt.":" · fora"):""}${t&&t.inj?" · lesão":""}</span>${t?`<span class="nm">${esc(t.n)}</span>`:""}${aimed && pend?`<span class="nm">${esc(pend.letter)}…</span>`:""}</button>`;
     }).join("")}</div>`;
 }
 function boardHTML(p, mine){
@@ -2672,59 +2768,85 @@ function handHTML(p, mine){
     const opts = (S.ui.pick==="repeat" ? pastLetters(p) : AL.split("")).filter(L=>!(p.blocked||[]).includes(L));
     picker = `<div class="stack" style="gap:6px"><span class="lbl">${S.ui.pick==="repeat"?"Escolha uma letra que você já usou no seu time":"Escolha qualquer letra"}</span>${opts.length?`<div class="letters">${opts.map(X=>`<button data-act="pickL" data-l="${X}">${X}</button>`).join("")}</div>`:'<p class="note" style="margin:0">Você ainda não escalou ninguém, então não tem letra para repetir.</p>'}</div>`;
   }
-  if(!hand.length) return `<div class="stack" style="gap:6px"><span class="lbl">Suas cartinhas</span><p class="note" style="margin:0">Nenhuma ainda. Quinze números do seu quadro trazem uma cartinha junto com a letra.</p></div>`;
-  return `<div class="stack" style="gap:8px"><span class="lbl">Suas cartinhas</span><div class="cards">${hand.map(c=>{
+  if(!hand.length) return `<div class="stack" style="gap:6px"><p class="note" style="margin:0">Nenhuma ainda. Quinze números do seu quadro trazem uma cartinha junto com a letra.</p></div>`;
+  return `<div class="stack" style="gap:8px"><div class="cards">${hand.map(c=>{
     const usable = mine && (isAtk(c.t) ? atkTargets(c.t).length>0 : c.t==="swap" ? teamCount(p)>=2 : c.t==="pos" ? !!pend && teamCount(p)<10 : !!p.aim && (c.t==="reroll" ? !!pend : (c.t==="repeat" ? pastLetters(p).length>0 : true)));
     const act = isAtk(c.t) ? "atk" : c.t==="reroll" ? "cReroll" : "cPick";
     const exp = c.r + 1 > r.round ? "vale até a próxima rodada" : "última rodada!";
     return `<button class="card ${isAtk(c.t)?"atkcard":""}" ${usable?`data-act="${act}" data-k="${c.t}"`:"disabled"} aria-pressed="${S.ui.pick===c.t?"true":"false"}">${CARD_ICONS[c.t]}<b>${CARD_NAME[c.t]}</b><span class="cdesc">${CARD_DESC[c.t]}</span><small>${exp}</small>${isAtk(c.t) && !usable ? `<small class="why">${!mine ? "Use na sua vez" : "Nenhum adversário pode ser alvo agora"}</small>` : ""}</button>`;
   }).join("")}</div>${picker}${mine?atkHTML(p):""}${(p.blocked||[]).length?`<p class="note" style="margin:0">Letras bloqueadas para você: <b>${p.blocked.join(", ")}</b></p>`:""}</div>`;
 }
+function stepOf(p){ if(S.ui.pick==="pos" && p.pending) return "reaim"; if(!p.aim) return "aim"; if(!p.pending) return "reveal"; return "name"; }
+function stepperHTML(step){
+  const st=[["aim","Posição"],["reveal","Número"],["name","Jogador"]], idx={aim:0,reveal:1,name:2,reaim:2}[step];
+  return `<ol class="stepper">${st.map(([k,l],i)=>`<li class="${i<idx?"done":i===idx?"now":""}"><span>${i+1}</span>${l}</li>`).join("")}</ol>`;
+}
 function actionHTML(p){
-  if(!p.pending){
-    if(!p.aim) return `<div class="panel stack"><h3 style="font-size:24px">1. Escolha a posição no campo</h3><p class="note" style="margin:0">Toque numa posição vazia. Depois você abre um número e escala alguém com a letra que sair.</p>${handHTML(p,true)}</div>`;
-    const lab = POS.find(x=>x.id===p.aim).l;
-    if(p.revealed.length>=26) return `<div class="panel stack"><div class="lbl">O quadro acabou. Escolha uma letra para ${lab}</div><div class="letters">${AL.split("").map(L=>`<button data-act="free" data-l="${L}">${L}</button>`).join("")}</div></div>`;
-    return `<div class="panel stack"><h3 style="font-size:24px">2. Abra um número para ${lab}</h3><p class="note" style="margin:0">${p.forced ? "Um adversário usou Escolher a posição: desta vez você tem que escalar o "+lab+"." : "Ainda dá para mudar a posição tocando em outra no campo."}</p>${handHTML(p,true)}</div>`;
+  const step=stepOf(p), lab=p.aim ? POS.find(x=>x.id===p.aim).l : "";
+  if(step==="reaim") return `${stepperHTML(step)}<div class="panel stack"><h3 class="stage-h">Trocar posição</h3><p class="note" style="margin:0">Toque numa posição vazia para levar a letra <b>${esc(p.pending.letter)}</b> para lá.</p>${pitchHTML(p,{interactive:true})}<button class="btn ghost" data-act="cancelPick">Cancelar</button></div>`;
+  if(step==="aim") return `${stepperHTML(step)}<div class="panel stack"><h3 class="stage-h">Toque na posição que você quer preencher</h3>${pitchHTML(p,{interactive:true})}</div>`;
+  if(step==="reveal"){
+    if(p.revealed.length>=26) return `${stepperHTML(step)}<div class="panel stack"><h3 class="stage-h">O quadro acabou</h3><p class="note" style="margin:0">Escolha uma letra para o ${lab}.</p><div class="letters">${AL.split("").filter(L=>!(p.blocked||[]).includes(L)).map(L=>`<button data-act="free" data-l="${L}">${L}</button>`).join("")}</div></div>`;
+    return `${stepperHTML(step)}<div class="panel stack"><div class="row" style="justify-content:space-between;align-items:center"><h3 class="stage-h">Abra um número</h3><span class="poschip">${lab}${p.forced?"":` <button class="linkbtn" data-act="unaim">trocar</button>`}</span></div>
+      ${p.forced?`<p class="note" style="margin:0">Um adversário escolheu a sua posição desta vez: você tem que escalar o <b>${lab}</b>.</p>`:""}
+      ${boardHTML(p,true)}
+      ${(p.blocked||[]).length?`<p class="note" style="margin:0">Letras bloqueadas para você: <b>${p.blocked.join(", ")}</b></p>`:""}</div>`;
   }
-  const L=p.pending.letter, lab=POS.find(x=>x.id===p.aim)?.l||"";
-  return `<div class="panel action">
+  const L=p.pending.letter;
+  return `${stepperHTML(step)}<div class="panel action">
     <div class="row" style="flex-wrap:nowrap;align-items:center"><div class="bigletter">${L}</div>
       <div class="stack" style="gap:6px;flex:1;min-width:0"><label class="lbl" for="draft">${lab} com a letra ${L}</label>
-      <input id="draft" maxlength="28" placeholder="Nome começando com ${L}" value="${esc(S.ui.draft)}" autocomplete="off"></div></div>
+      <input id="draft" maxlength="28" placeholder="Digite um jogador com ${L}" value="${esc(S.ui.draft)}" autocomplete="off" autocapitalize="words"></div></div>
     <div id="fitnote">${fitHTML(p)}</div>
     <div id="sugg" class="stack" style="gap:6px">${suggHTML(p)}</div>
-    <button class="btn gold" data-act="place">Escalar no ${lab}</button>
-    ${handHTML(p,true)}
-    ${(p.passes||0)>=1 ? '<p class="note" style="margin:0">Você já usou o seu passe nesta partida.</p>' : '<button class="btn ghost" data-act="pass">Passar a vez (perde a letra) · só 1 vez por partida</button>'}
+    <button class="btn gold big" data-act="place">Escalar no ${lab}</button>
+    ${(p.passes||0)>=1 ? '<p class="note" style="margin:0">Você já usou o seu passe nesta partida.</p>' : '<button class="linkbtn" data-act="pass">Não lembro de ninguém: passar a vez (só 1 vez por partida)</button>'}
   </div>`;
 }
+function cardbarHTML(p, mine){
+  const hand=validCards(p); if(!p) return "";
+  const atk=hand.filter(c=>isAtk(c.t)).length;
+  return `<div class="cardbar"><button class="btn cardbtn" data-act="sheet" ${hand.length?"":"disabled"}><span class="cardicon">${CARD_ICONS.letter}</span>Cartinhas <b>${hand.length}</b>${atk?` <span class="atkdot">${atk} de ataque</span>`:""}</button>
+    <span class="note cardhint">${!hand.length ? "Alguns números trazem cartinhas." : mine ? "Toque para ver e usar." : "Você pode usar na sua vez."}</span></div>`;
+}
+function sheetHTML(p, mine){
+  if(!S.ui.sheet) return "";
+  return `<div class="sheet-bg" data-act="sheetClose"></div><div class="sheet" role="dialog" aria-label="Suas cartinhas"><div class="row" style="justify-content:space-between"><h3 style="font-size:24px">Suas cartinhas</h3><button class="btn ghost" data-act="sheetClose">Fechar</button></div>${handHTML(p, mine)}</div>`;
+}
+function evtHTML(){
+  const e=S.ui.evt; if(!e) return "";
+  return `<div class="evt ${e.kind||""}" data-act="evtClose" role="status"><span class="evti">${CARD_ICONS[e.icon]||""}</span><div><b>${esc(e.title)}</b><p>${esc(e.text)}</p></div></div>`;
+}
+function showEvt(title, text, icon, kind){ S.ui.evt={title,text,icon,kind}; clearTimeout(showEvt.t); showEvt.t=setTimeout(()=>{ S.ui.evt=null; render(); }, 5500); render(); }
 function vGame(){
   const r=S.room, me=actor(), turnP=r.players[r.turn];
   const botNow = !!r.players[r.turn]?.bot;
   const myTurn = r.turn===me && !botNow;
   const viewId = S.view && r.players[S.view] ? S.view : (r.players[me] ? me : r.turn);
-  const vp = r.players[viewId];
+  const vp = r.players[viewId], mp = r.players[me];
   const viewingMine = viewId===me && myTurn;
   const host = S.mode==="online" && r.hostId===S.me;
-  return `<div class="top"><div class="row">${r.code?`<span class="lbl">Sala</span><span class="code">${esc(r.code)}</span>`:'<span class="lbl">Partida num aparelho só</span>'}<span class="lbl">Rodada ${r.round}</span></div><button class="btn ghost" data-act="leave">Sair</button></div>
+  const showCards = mp && !mp.bot && (S.mode==="online" || myTurn);
+  return `<div class="top"><div class="row">${r.code?`<span class="lbl">Sala</span><span class="code">${esc(r.code)}</span>`:""}<span class="lbl">Rodada ${r.round}</span></div><div class="row"><button class="btn ghost" data-act="onb" aria-label="Como jogar">?</button><button class="btn ghost" data-act="leave">Sair</button></div></div>
   ${S.ui.net?`<p class="err">${esc(S.ui.net)}</p>`:""}
   <div class="turn ${myTurn?"mine":""}"><div><div class="lbl">${botNow?"O robô está jogando":S.mode==="local"?"Passe o celular para":"Agora é a vez de"}</div><h2>${myTurn && S.mode==="online" ? "Sua vez!" : esc(turnP?.name)}${botNow?' <span class="thinking">pensando…</span>':""}</h2></div>
     ${host && !myTurn ? `<button class="btn ghost" data-act="skip">Pular a vez de ${esc(turnP?.name)}</button>` : ""}</div>
   <div class="tabs" role="group" aria-label="Times">${r.order.map(id=>{const p=r.players[id];return `<button class="tab" data-act="view" data-id="${id}" aria-pressed="${id===viewId}">${id===r.turn?'<span class="dot"></span>':""}${esc(p.name)}${id===S.me&&S.mode==="online"?" (você)":""} <small>${teamCount(p)}/11${teamOvr(p)?" · "+teamOvr(p):""}</small></button>`;}).join("")}</div>
-  <div class="game">
+  <div class="game2 ${viewingMine?"playing":""}">
     <div class="stack">
-      <div class="panel stack"><div class="row" style="justify-content:space-between"><span class="lbl">Quadro de ${esc(vp.name)}</span><span class="note">${vp.revealed.length} de 26 abertos</span></div>${boardHTML(vp, viewingMine)}</div>
-      ${viewingMine ? actionHTML(vp) : `<div class="panel"><p class="note" style="margin:0">${viewId===me ? "Espere a sua vez. Você pode olhar os times dos outros nas abas acima." : "Você está vendo o time de "+esc(vp.name)+"."}${vp.pending?" Letra da vez: <b>"+esc(vp.pending.letter)+"</b>.":""}</p>${viewId===me && S.mode==="online" ? `<div style="margin-top:10px">${handHTML(vp,false)}</div>` : ""}</div>`}
+      ${viewingMine ? actionHTML(vp) : `<div class="panel stack"><div class="row" style="justify-content:space-between"><span class="lbl">${viewId===me?"Seu time":"Time de "+esc(vp.name)}</span>${teamOvr(vp)?`<span class="ovrb ${ovrTier(teamOvr(vp))}">OVR ${teamOvr(vp)}</span>`:""}</div>${pitchHTML(vp,{})}
+        <p class="note" style="margin:0">${viewId===me ? (botNow?"O robô está jogando. Já já é a sua vez.":"Espere a sua vez.") : "Você está vendo o time de "+esc(vp.name)+"."}${vp.pending?" Letra da vez: <b>"+esc(vp.pending.letter)+"</b>.":""}</p>
+        <details class="fold"><summary>Ver quadro de números</summary>${boardHTML(vp,false)}</details></div>`}
     </div>
-    <div class="stack">
-      ${pitchHTML(vp, {interactive:viewingMine})}
-      <div class="panel stack"><span class="lbl">Lances</span><ul class="log">${[...(r.log||[])].reverse().slice(0,8).map(l=>`<li>${esc(l.text)}</li>`).join("")}</ul></div>
+    <div class="stack side">
+      ${viewingMine ? `<div class="panel stack sidepitch"><span class="lbl">Seu time</span>${pitchHTML(vp,{})}</div>` : ""}
+      <details class="panel fold" ${matchMedia("(min-width:860px)").matches?"open":""}><summary class="lbl">Lances</summary><ul class="log">${[...(r.log||[])].reverse().slice(0,10).map(l=>`<li>${esc(l.text)}</li>`).join("")}</ul></details>
     </div>
   </div>
   ${(()=>{ const rest=r.order.filter(id=>id!==viewId); if(!rest.length) return "";
     return `<section class="others"><div class="lbl">${viewId===me?"Times dos adversários":"Os outros times"}</div><div class="othgrid">${rest.map(id=>{const op=r.players[id], ov=teamOvr(op);
-      return `<div class="oth ${id===r.turn?"turnnow":""}" data-act="view" data-id="${id}" role="button" tabindex="0" aria-label="Ver o time de ${esc(op.name)}"><div class="othhead"><b>${esc(op.name)}${id===me&&S.mode==="online"?" (você)":""}</b><span class="note">${teamCount(op)}/11</span>${ov?`<span class="ovrb ${ovrTier(ov)}">${ov}</span>`:""}${id===r.turn?'<span class="othturn">na vez</span>':""}</div>${pitchHTML(op,{mini:true})}${(op.blocked||[]).length?`<span class="note">Bloqueadas: ${op.blocked.join(", ")}</span>`:""}</div>`;}).join("")}</div></section>`; })()}`;
+      return `<div class="oth ${id===r.turn?"turnnow":""}" data-act="view" data-id="${id}" role="button" tabindex="0" aria-label="Ver o time de ${esc(op.name)}"><div class="othhead"><b>${esc(op.name)}${id===me&&S.mode==="online"?" (você)":""}</b><span class="note">${teamCount(op)}/11</span>${ov?`<span class="ovrb ${ovrTier(ov)}">${ov}</span>`:""}${id===r.turn?'<span class="othturn">na vez</span>':""}</div>${pitchHTML(op,{mini:true})}${(op.blocked||[]).length?`<span class="note">Bloqueadas: ${op.blocked.join(", ")}</span>`:""}</div>`;}).join("")}</div></section>`; })()}
+  ${showCards ? cardbarHTML(mp, myTurn) + sheetHTML(mp, myTurn) : ""}`;
 }
 function vDone(){
   const r=S.room, votes=r.votes||{}, tally={};
@@ -2733,7 +2855,19 @@ function vDone(){
   const KEYS=["gol","ld","zg1","zg2","le","vol","mc1","mc2","pd","pe","ca"], wins={}, best={};
   KEYS.forEach(k=>{ const vals=r.order.map(id=>slotOvr(r.players[id].team?.[k])??-1); const m=Math.max(...vals); best[k]=m; if(vals.filter(v=>v===m).length===1){ const w=r.order[vals.indexOf(m)]; wins[w]=(wins[w]||0)+1; } });
   const online=S.mode==="online", host = online ? r.hostId===S.me : true;
-  return `<div class="top"><div class="row"><h2 style="font-size:34px">Times escalados</h2></div><button class="btn ghost" data-act="leave">Sair</button></div>
+  const rank=[...r.order].sort((a,b)=>((teamOvr(r.players[b])||0)-(teamOvr(r.players[a])||0)) || ((wins[b]||0)-(wins[a]||0)));
+  const W=r.players[rank[0]], tie = rank.length>1 && teamOvr(r.players[rank[1]])===teamOvr(W) && (wins[rank[1]]||0)===(wins[rank[0]]||0);
+  const iWon = rank[0]===S.me && online;
+  const hero = `<section class="hero-win">${matchMedia("(prefers-reduced-motion: reduce)").matches?"":`<div class="confetti">${Array.from({length:28},(_,i)=>`<i style="--x:${(i*37)%100}%;--d:${(i%7)*0.25}s;--c:${["#f6d98a","#ff6a3d","#5fd38d","#eef3ea"][i%4]}"></i>`).join("")}</div>`}
+    <div class="trophy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg></div>
+    <span class="lbl">${tie?"Empate no overall":"Fim de jogo"}</span>
+    <h1>${tie ? "Deu empate!" : iWon ? "Você venceu!" : esc(W.name)+" venceu!"}</h1>
+    <p class="note">${tie ? "Os dois times terminaram com o mesmo overall. Publique no mural e deixe a galera desempatar." : "Maior overall: <b>"+teamOvr(W)+"</b>"+((wins[rank[0]]||0)?", com "+wins[rank[0]]+(wins[rank[0]]===1?" posição vencida":" posições vencidas"):"")+"."}</p>
+    <ol class="podium">${rank.map((id,i)=>`<li class="${i===0?"first":""}"><span class="pl">${i+1}º</span><span class="pn">${esc(r.players[id].name)}${r.players[id].bot?' <span class="lbl">robô</span>':""}</span><span class="ovrb ${ovrTier(teamOvr(r.players[id])||0)}">${teamOvr(r.players[id])??"—"}</span></li>`).join("")}</ol>
+  </section>`;
+  return `<div class="top"><div class="row"><span class="lbl">Resultado</span></div><button class="btn ghost" data-act="leave">Sair</button></div>
+  ${hero}
+  <h2 style="font-size:30px;margin:18px 0 6px">Times escalados</h2>
   <p class="note" style="margin:0 0 14px">${online ? (myVote ? "Voto registrado. Dá para mudar até todo mundo votar." : "Qual time ficou melhor? Vote em um time que não seja o seu.") : "Qual time ficou melhor? Decidam aí na resenha."}</p>
   <div class="teams">${[...r.order].sort((a,b)=>(teamOvr(r.players[b])||0)-(teamOvr(r.players[a])||0)).map(id=>{const p=r.players[id];return `<div class="panel team stack"><div class="row" style="justify-content:space-between"><div><h3>${esc(p.name)}</h3><span class="note">${Object.values(p.team||{}).filter(t=>t.ok!==false).length} de 11 na posição · venceu ${wins[id]||0} posições</span></div><div class="teamovr ${ovrTier(teamOvr(p)||0)}"><small>OVR</small>${teamOvr(p)??"—"}</div>${online?`<span class="votes">${tally[id]||0} voto${(tally[id]||0)===1?"":"s"}</span>`:""}</div>
     ${pitchHTML(p,{mini:true})}
@@ -2770,6 +2904,17 @@ async function act(a, d={}){
       case "join": S.ui.err=""; return joinRoom();
       case "toLocal": S.screen="local"; S.ui.err=""; return render();
       case "muralOpen": return openMural(d.id);
+      case "sheet": S.ui.sheet=true; return render();
+      case "sheetClose": S.ui.sheet=false; S.ui.atk=null; if(S.ui.pick!=="pos") S.ui.pick=null; return render();
+      case "evtClose": S.ui.evt=null; return render();
+      case "cancelPick": S.ui.pick=null; return render();
+      case "unaim": { const p=S.room.players[actor()]; if(p.forced || p.pending) return; await write({players:{[actor()]:{aim:null}}}); return; }
+      case "onb": S.ui.onb=0; return render();
+      case "onbNext": S.ui.onb=Math.min(ONB.length-1,(S.ui.onb||0)+1); return render();
+      case "onbPrev": S.ui.onb=Math.max(0,(S.ui.onb||0)-1); return render();
+      case "onbEnd": S.ui.onb=null; lsSet("ae_onb","1"); return render();
+      case "hintsLocal": S.ui.hints=d.v; return render();
+      case "hintsRoom": if(S.room?.hostId===S.me) await write({hints:d.v}); return;
       case "muralPublish": return publishMural();
       case "muralVote": return voteMural(d.id, d.k);
       case "muralCopy": return copyMural(d.id);
@@ -2787,16 +2932,16 @@ async function act(a, d={}){
       case "reveal": return reveal(+d.i);
       case "place": return place();
       case "aim": return setAim(d.pos);
-      case "cReroll": return cardReroll();
-      case "cPick": S.ui.pick = S.ui.pick===d.k ? null : d.k; S.ui.swapA=null; return render();
+      case "cReroll": S.ui.sheet=false; return cardReroll();
+      case "cPick": S.ui.pick = S.ui.pick===d.k ? null : d.k; S.ui.swapA=null; if(d.k==="pos" && S.ui.pick) S.ui.sheet=false; return render();
       case "reaim": return cardPos(d.pos);
       case "atk": S.ui.atk = S.ui.atk?.k===d.k ? null : {k:d.k}; S.ui.pick=null; return render();
       case "atkTo": S.ui.atk = {...S.ui.atk, to:d.id, letters:[]}; return render();
       case "atkL": { const a=S.ui.atk; const set=new Set(a.letters||[]); set.has(d.l)?set.delete(d.l):(set.size<3&&set.add(d.l)); a.letters=[...set]; return render(); }
-      case "atkGo": return atkDo(S.ui.atk.k, S.ui.atk.to, S.ui.atk.k==="block" ? S.ui.atk.letters : d.a);
+      case "atkGo": S.ui.sheet=false; return atkDo(S.ui.atk.k, S.ui.atk.to, S.ui.atk.k==="block" ? S.ui.atk.letters : d.a);
       case "atkCancel": S.ui.atk=null; return render();
       case "swapsel": return cardSwap(d.pos);
-      case "pickL": return cardPick(S.ui.pick, d.l);
+      case "pickL": S.ui.sheet=false; return cardPick(S.ui.pick, d.l);
       case "sugg": S.ui.draft=d.n; render(); return;
       case "free": return freeLetter(d.l);
       case "pass": return pass();
@@ -2806,6 +2951,7 @@ async function act(a, d={}){
     }
   }catch(e){ console.error(e); }
 }
+if(!lsGet("ae_onb") && !/^#mural/.test(location.hash)) S.ui.onb=0;
 render();
 if(/^#mural/.test(location.hash)) openMural(location.hash.slice(7)||null);
 window.addEventListener("hashchange", ()=>{ if(/^#mural/.test(location.hash)) openMural(location.hash.slice(7)||null); });
