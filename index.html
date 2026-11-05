@@ -114,6 +114,8 @@ input::placeholder{color:#6f8a79}
 .slot.can.full{border-color:var(--flag);box-shadow:0 0 0 3px rgba(255,106,61,.3)}
 .slot:disabled{cursor:default}
 .slot.off{border-color:var(--gold);border-style:dashed}
+.slot.off.adapt{border-style:solid;border-color:#b9c98a}
+.slot.off.adapt .pos{color:#c9d79a}
 .slot.off .pos{color:var(--gold)}
 .cmpwrap{overflow-x:auto}
 .cmp{border-collapse:collapse;width:100%;font-size:14px;min-width:420px}
@@ -1902,7 +1904,8 @@ Xeka|MC|76
 Xande Silva|PE|74
 Xabier Etxeita|ZAG|74`;
 const POS_NAME = {GOL:"goleiro", LD:"lateral-direito", LE:"lateral-esquerdo", ZAG:"zagueiro", VOL:"volante", MC:"meio-campista", MEI:"meia", PE:"ponta-esquerda", PD:"ponta-direita", CA:"centroavante"};
-const SLOT_OK = {gol:["GOL"], ld:["LD"], le:["LE"], zg1:["ZAG"], zg2:["ZAG"], vol:["VOL","MC"], mc1:["MC","MEI","VOL"], mc2:["MC","MEI","VOL"], pe:["PE","PD"], pd:["PD","PE"], ca:["CA"]};
+const RELATED = {vol:["MEI"], mc1:["VOL"], mc2:["VOL"], zg1:["LD","LE"], zg2:["LD","LE"], ld:["ZAG","LE"], le:["ZAG","LD"], pe:["CA"], pd:["CA"], ca:["PE","PD"]};
+const SLOT_OK = {gol:["GOL"], ld:["LD"], le:["LE"], zg1:["ZAG"], zg2:["ZAG"], vol:["VOL","MC"], mc1:["MC","MEI"], mc2:["MC","MEI"], pe:["PE","PD"], pd:["PD","PE"], ca:["CA"]};
 const normName = s => (s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
 const PL = [], PALIAS = new Map();
 PDATA.split("\n").forEach((ln,i) => {
@@ -1926,12 +1929,13 @@ const fits = (e, slot) => !!e && e.pos.some(x => SLOT_OK[slot]?.includes(x));
 const posText = e => e.pos.map(x => POS_NAME[x]).join(" / ");
 /* overall na posição: perde 4 em lateral trocado, 8 fora de posição e vai a 45 com goleiro na linha ou jogador de linha no gol */
 const UNKNOWN_OVR = 75;
+const adapted = (e, slot) => !!e && !fits(e, slot) && !(slot==="gol") && !(e.pos.length===1 && e.pos[0]==="GOL") && e.pos.some(x => RELATED[slot]?.includes(x));
 function effOvr(e, slot){
   if(!e) return UNKNOWN_OVR;
   if(fits(e, slot)) return e.ovr;
   const isGK = e.pos.includes("GOL");
   if(slot==="gol" || (isGK && e.pos.length===1)) return 45;
-  if((slot==="ld"||slot==="le") && (e.pos.includes("LD")||e.pos.includes("LE"))) return e.ovr-4;
+  if(adapted(e, slot)) return e.ovr-3;
   return e.ovr-8;
 }
 const slotOvr = t => t ? (t.v ?? UNKNOWN_OVR) : null;
@@ -1961,7 +1965,7 @@ function fitHTML(p){
   const e=lookup(name), lab=POS.find(x=>x.id===p.aim).l;
   if(!e) return name.length<3 ? "" : `<span class="fit unk">Não está na nossa lista. Vale se a galera concordar, e entra com overall ${UNKNOWN_OVR}.</span>`;
   const v=effOvr(e,p.aim);
-  return fits(e,p.aim) ? `<span class="fit ok">Overall ${e.ovr}. Joga de ${esc(posText(e))}, está na posição.</span>` : `<span class="fit off">Overall ${e.ovr}, mas joga de ${esc(posText(e))}. No ${lab} fica com ${v}.</span>`;
+  return fits(e,p.aim) ? `<span class="fit ok">Overall ${e.ovr}. Joga de ${esc(posText(e))}, está na posição.</span>` : (adapted(e,p.aim) ? `<span class="fit off">Overall ${e.ovr}. Joga de ${esc(posText(e))}, posição parecida: no ${lab} fica adaptado com ${v}.</span>` : `<span class="fit off">Overall ${e.ovr}, mas joga de ${esc(posText(e))}. Fora de posição no ${lab}, fica com ${v}.</span>`);
 }
 
 /* ---------- stores ---------- */
@@ -2198,7 +2202,7 @@ async function place(){
   if(owner){ toast(name+" já foi escalado"+(owner===p.name?" no seu time":" pelo "+owner)+". Escolha outro."); return; }
   const posLabel = POS.find(x=>x.id===posId).l;
   const e = lookup(name), ok = e ? fits(e,posId) : null, nm = e ? e.names.find(x=>normName(x)===normName(name)) || name : name;
-  const slot = {n:nm, l:pend.letter, ok, o:e?e.ovr:null, v:effOvr(e,posId)};
+  const slot = {n:nm, l:pend.letter, ok, a:adapted(e,posId), o:e?e.ovr:null, v:effOvr(e,posId)};
   const players = clone(S.room.players); players[id] = {...p, team:{...p.team, [posId]:slot}, pending:null, aim:null};
   await write({ players:{[id]:{ team:{[posId]:slot}, pending:null, aim:null, hand:validCards(p) }}, log:logPatch(p.name+" escalou "+nm+" ("+posLabel+")"+(ok===false?" fora de posição":"")), ...nextTurnPatch(players) });
 }
@@ -2225,7 +2229,7 @@ async function cardPos(posId){
   const from=POS.find(x=>x.id===p.aim)?.l||"", to=POS.find(x=>x.id===posId).l;
   await write({ players:{[id]:{ aim:posId, hand }}, log:logPatch(p.name+" usou Trocar posição: a letra "+p.pending.letter+" saiu do "+from+" e foi para o "+to) });
 }
-function slotFor(t, posId){ const e=lookup(t.n); return {...t, ok:e?fits(e,posId):null, v:effOvr(e,posId)}; }
+function slotFor(t, posId){ const e=lookup(t.n); return {...t, ok:e?fits(e,posId):null, a:adapted(e,posId), v:effOvr(e,posId)}; }
 async function cardSwap(posId){
   const id=actor(), p=S.room.players[id];
   if(S.room.turn!==id || !p.team[posId]) return;
@@ -2271,7 +2275,7 @@ function rulesHTML(){
   return `<div class="panel rules"><div class="lbl">Como funciona</div><ol>
     <li>Cada jogador tem um quadro com os números de 1 a 26. Atrás deles estão as 26 letras do alfabeto, embaralhadas de um jeito diferente para cada um.</li>
     <li>Na sua vez, <b>escolha primeiro a posição</b> no campo (4-3-3). Depois abra um número: a letra que sair é a inicial do jogador que vai nessa posição.</li>
-    <li>Digite o nome de um jogador de futebol com essa inicial e escale. Não vale repetir jogador: quem já foi escalado por alguém não pode entrar de novo. Vale qualquer nome pelo qual o jogador é conhecido: o Messi entra com M (Messi) ou com L (Lionel ou Leo Messi). O jogo sugere nomes de uma lista com mais de 1.600 jogadores, cada um com o overall do auge da carreira. Fora de posição o jogador perde pontos, e o overall do time é a média dos 11.</li>
+    <li>Digite o nome de um jogador de futebol com essa inicial e escale. Não vale repetir jogador: quem já foi escalado por alguém não pode entrar de novo. Vale qualquer nome pelo qual o jogador é conhecido: o Messi entra com M (Messi) ou com L (Lionel ou Leo Messi). O jogo sugere nomes de uma lista com mais de 1.600 jogadores, cada um com o overall do auge da carreira. Em posição parecida (volante e meia, lateral e zagueiro, ponta e centroavante, lateral trocado de lado) o jogador fica <b>adaptado</b> e perde 3 pontos. Fora de posição perde 8, e goleiro na linha ou jogador de linha no gol cai para 45. O overall do time é a média dos 11.</li>
     <li>Oito números do quadro trazem, junto com a letra, uma <b>cartinha</b> (2 de cada um dos 4 tipos, explicados abaixo). Você pode usar na hora ou guardar para a próxima rodada.</li>
     <li>Se não lembrar de ninguém, dá para <b>passar a vez</b>, mas só <b>uma vez por partida</b> e você perde a letra.</li>
     <li>Quando todo mundo completar os 11, os times são comparados posição por posição e cada um vota no melhor time (não vale votar no seu).</li>
@@ -2338,8 +2342,8 @@ function pitchHTML(p, opts={}){
       const can = mode==="swap" ? !!t : mode==="pos" ? !t : (interactive && !pend && !t);
       const act = mode==="swap" ? "swapsel" : mode==="pos" ? "reaim" : "aim";
       const sel = mode==="swap" && S.ui.swapA===pos.id;
-      return `<button class="slot ${t?"full":""} ${t&&t.ok===false?"off":""} ${can?"can":""} ${aimed||sel?"aim":""}" ${can?`data-act="${act}" data-pos="${pos.id}"`:"disabled"} style="left:${pos.x}%;top:${pos.y}%" aria-pressed="${aimed?"true":"false"}" aria-label="${pos.l}${t?": "+esc(t.n):" vazia"}">
-        ${t?`<span class="lt">${esc(t.l)}</span><span class="ov ${ovrTier(slotOvr(t))}">${slotOvr(t)}</span>`:""}<span class="pos">${pos.l}${t&&t.ok===false?" · fora":""}</span>${t?`<span class="nm">${esc(t.n)}</span>`:""}${aimed && pend?`<span class="nm">${esc(pend.letter)}…</span>`:""}</button>`;
+      return `<button class="slot ${t?"full":""} ${t&&t.ok===false?"off":""} ${t&&t.a?"adapt":""} ${can?"can":""} ${aimed||sel?"aim":""}" ${can?`data-act="${act}" data-pos="${pos.id}"`:"disabled"} style="left:${pos.x}%;top:${pos.y}%" aria-pressed="${aimed?"true":"false"}" aria-label="${pos.l}${t?": "+esc(t.n):" vazia"}">
+        ${t?`<span class="lt">${esc(t.l)}</span><span class="ov ${ovrTier(slotOvr(t))}">${slotOvr(t)}</span>`:""}<span class="pos">${pos.l}${t&&t.ok===false?(t.a?" · adapt.":" · fora"):""}</span>${t?`<span class="nm">${esc(t.n)}</span>`:""}${aimed && pend?`<span class="nm">${esc(pend.letter)}…</span>`:""}</button>`;
     }).join("")}</div>`;
 }
 function boardHTML(p, mine){
@@ -2424,7 +2428,7 @@ function vDone(){
   <div class="teams">${[...r.order].sort((a,b)=>(teamOvr(r.players[b])||0)-(teamOvr(r.players[a])||0)).map(id=>{const p=r.players[id];return `<div class="panel team stack"><div class="row" style="justify-content:space-between"><div><h3>${esc(p.name)}</h3><span class="note">${Object.values(p.team||{}).filter(t=>t.ok!==false).length} de 11 na posição · venceu ${wins[id]||0} posições</span></div><div class="teamovr ${ovrTier(teamOvr(p)||0)}"><small>OVR</small>${teamOvr(p)??"—"}</div>${online?`<span class="votes">${tally[id]||0} voto${(tally[id]||0)===1?"":"s"}</span>`:""}</div>
     ${pitchHTML(p,{mini:true})}
     ${online && id!==S.me ? `<button class="btn ${myVote===id?"gold":""}" data-act="vote" data-id="${id}">${myVote===id?"Seu voto":"Votar neste time"}</button>`:""}</div>`;}).join("")}</div>
-  <div class="panel stack" style="margin-top:16px"><span class="lbl">Posição por posição</span><p class="note" style="margin:0">Em destaque, quem tem o maior overall em cada posição. Fora de posição o jogador perde pontos.</p><div class="cmpwrap"><table class="cmp"><thead><tr><th>Posição</th>${r.order.map(id=>`<th>${esc(r.players[id].name)}</th>`).join("")}</tr></thead><tbody>${KEYS.map(k=>{const pos=POS.find(x=>x.id===k);return `<tr><th>${pos.l}</th>${r.order.map(id=>{const t=r.players[id].team?.[k], v=slotOvr(t);return `<td class="${t&&t.ok===false?"offp":""} ${t&&v===best[k]?"win":""}">${t?`<span class="ovrb ${ovrTier(v)}">${v}</span> ${esc(t.n)}`:"—"}${t&&t.ok===false?" <small>fora</small>":""}</td>`;}).join("")}</tr>`;}).join("")}</tbody></table></div></div>
+  <div class="panel stack" style="margin-top:16px"><span class="lbl">Posição por posição</span><p class="note" style="margin:0">Em destaque, quem tem o maior overall em cada posição. Adaptado perde 3 pontos e fora de posição perde 8.</p><div class="cmpwrap"><table class="cmp"><thead><tr><th>Posição</th>${r.order.map(id=>`<th>${esc(r.players[id].name)}</th>`).join("")}</tr></thead><tbody>${KEYS.map(k=>{const pos=POS.find(x=>x.id===k);return `<tr><th>${pos.l}</th>${r.order.map(id=>{const t=r.players[id].team?.[k], v=slotOvr(t);return `<td class="${t&&t.ok===false?"offp":""} ${t&&v===best[k]?"win":""}">${t?`<span class="ovrb ${ovrTier(v)}">${v}</span> ${esc(t.n)}`:"—"}${t&&t.ok===false?(t.a?" <small>adaptado</small>":" <small>fora</small>"):""}</td>`;}).join("")}</tr>`;}).join("")}</tbody></table></div></div>
   ${host ? `<div class="row" style="margin-top:16px"><button class="btn gold" data-act="rematch">Jogar de novo</button></div>` : ""}`;
 }
 
