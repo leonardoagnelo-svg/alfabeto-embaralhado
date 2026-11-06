@@ -14,7 +14,7 @@
 /* Layout: estádio à noite — coluna única no celular; no desktop, quadro + ações à esquerda e campo à direita */
 :root{
   --night:#0B0F14; --panel:#121821; --panel2:#1F2937; --grass:#0f5a33; --grass2:#12663a;
-  --chalk:#E5E7EB; --muted:#9CA3AF; --line:rgba(229,231,235,.38);
+  --chalk:#E5E7EB; --muted:#B4BCC8; --line:rgba(229,231,235,.38);
   --gold:#D4AF37; --gold-hi:#F2D675; --gold-deep:#8A6A12; --ink:#0B0F14;
   --flag:#D4AF37; --flag-ink:#0B0F14; --ok:#16A34A; --bad:#F87171;
   --atk:#DC2626; --atk-hi:#F87171; --atk-deep:#7F1D1D;
@@ -369,8 +369,40 @@ body{background:var(--night)!important;background-image:none!important}
 .twobtn{grid-template-columns:1fr}
 .top{flex-wrap:nowrap}
 .top>.row{flex-wrap:nowrap;min-width:0}
-@media (max-width:380px){.minilogo span{display:none}}
+@media (max-width:460px){.minilogo span{display:none}}
 .top .lbl{white-space:nowrap}
+
+/* ---- melhorias de UX ---- */
+.btn.mini{padding:6px 10px;font-size:12px;border-radius:9px}
+.iconbtn{padding:9px 11px}.iconbtn svg{width:18px;height:18px;display:block}
+.btn.danger{background:#b91c1c;border-color:#ef4444;color:#fff}
+.confirm{max-width:400px;width:calc(100% - 32px);margin:auto}
+.mypitch{display:flex;margin-top:4px}
+@media (min-width:860px){.mypitch{display:none}}
+.pcard{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--panel2);border:1px solid #2f3b4d}
+.pcard .pov{font-family:var(--f-display);font-weight:900;font-size:26px;min-width:56px;height:56px;display:grid;place-items:center;border-radius:10px;background:#0B0F14;border:2px solid var(--gold);color:var(--gold-hi)}
+.pcard b{display:block;font-size:17px;line-height:1.15}.pcard small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.pcard.ok{border-color:var(--ok)}.pcard.ok small{color:var(--ok)}.pcard.adapt{border-color:#b9c98a}.pcard.adapt small{color:#c9d79a}.pcard.off{border-color:var(--gold)}.pcard.off small{color:var(--gold)}
+.pcard.unk .pov{border-color:var(--muted);color:var(--muted)}
+.bigletter.flip{animation:lflip .75s cubic-bezier(.2,.8,.3,1.15)}
+@keyframes lflip{0%{transform:perspective(500px) rotateY(180deg) scale(.6);opacity:.2}60%{transform:perspective(500px) rotateY(-14deg) scale(1.1);opacity:1}100%{transform:none}}
+.slot.hit{animation:hitp .7s ease-in-out 5;border-color:#ef4444!important;border-style:solid!important}
+@keyframes hitp{50%{box-shadow:0 0 0 7px rgba(239,68,68,.55);background:rgba(239,68,68,.4)}}
+.unkb{position:absolute;bottom:-8px;left:-6px;font-family:var(--f-display);font-size:11px;background:#475569;color:#fff;border-radius:5px;padding:0 5px}
+.tab{position:relative;overflow:hidden}
+.tab .tprog{position:absolute;left:0;bottom:0;height:3px;background:var(--gold);border-radius:0 2px 2px 0;transition:width .4s}
+.tab .tovr{font-family:var(--f-label);font-weight:800;font-size:12px;padding:1px 6px;border-radius:6px;background:#0B0F14;color:var(--gold-hi);border:1px solid rgba(212,175,55,.6)}
+.lastplay{margin:-4px 0 12px;font-size:13.5px;color:var(--chalk);background:var(--panel);border:1px solid #223a2e;border-radius:10px;padding:8px 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lastplay .lbl{margin-right:6px}
+.card .expb,.ncard .expb{position:absolute;top:7px;right:7px;font-family:var(--f-label);font-size:10px;font-weight:800;letter-spacing:.04em;padding:2px 7px;border-radius:999px;background:rgba(11,15,20,.7);color:#fff;text-transform:uppercase}
+.expb.last{background:#b91c1c}.expb.inf{background:#1F2937;color:var(--gold-hi)}
+.card{padding:26px 8px 12px}
+.card .cdesc{font-size:12.5px;line-height:1.25}
+.card.dim{filter:grayscale(.75);opacity:.55}
+.ncard{position:relative}
+.ncard.big{margin:0 auto}
+.btn.big{display:flex;align-items:center;justify-content:center;gap:10px}
+@media (min-width:860px){.hero .brandlogo{width:auto;max-width:520px;max-height:30vh}}
 </style>
 </head>
 <body>
@@ -390,6 +422,11 @@ const POS = [
   {id:"le",l:"LE",x:13,y:66},{id:"zg1",l:"ZAG",x:37,y:72},{id:"zg2",l:"ZAG",x:63,y:72},{id:"ld",l:"LD",x:87,y:66},
   {id:"gol",l:"GOL",x:50,y:90}
 ];
+const CARD_SHORT = {
+  repeat:"Repita uma letra que você já usou.", letter:"Escolha qualquer letra.", reroll:"Descarte a letra e abra outro número.", pos:"Leve a letra para outra posição.",
+  steal:"Troque um jogador seu por um dele.", rob:"Pegue um jogador do rival.", expel:"Tire um jogador do rival.", block:"Bloqueie 3 letras do rival.",
+  choosepos:"Escolha a posição do rival.", injury:"Um jogador do rival perde 10.", stealcard:"Pegue uma cartinha do rival.", skip:"O rival pula a vez.", dey:"Mande o Deyverson pro rival.", swap:"Troque dois jogadores de lugar."
+};
 const CARD_ICONS = {
   rob:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="7" r="3"/><path d="M3 20c0-3.5 2.2-6 5-6s5 2.5 5 6"/><path d="M14 11h7M18 8l3 3-3 3"/></svg>',
   dey:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M8 3l-5 3 2 5 2-1v11h10V10l2 1 2-5-5-3c-.5 1.7-2 2.6-4 2.6S8.5 4.7 8 3z"/><text x="12" y="17.5" text-anchor="middle" font-size="7.5" font-weight="800" fill="currentColor" stroke="none" font-family="Montserrat,sans-serif">9</text></svg>',
@@ -423,6 +460,20 @@ function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg
 function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 S.ui.name = lsGet("ae_name") || "";
+S.ui.mute = !!lsGet("ae_mute");
+const SPK_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5L6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
+const SPK_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5L6 9H3v6h3l5 4z"/><path d="M22 9l-6 6M16 9l6 6"/></svg>';
+let AC=null;
+function sfx(k){
+  if(S.ui.mute) return;
+  try{
+    AC = AC || new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==="suspended") AC.resume();
+    const seq={turn:[[660,.09],[880,.16]], card:[[784,.07],[988,.07],[1319,.18]], goal:[[523,.07],[659,.07],[784,.2]], atk:[[247,.12],[175,.22]]}[k]; if(!seq) return;
+    let t=AC.currentTime+.01;
+    for(const [f,d] of seq){ const o=AC.createOscillator(), g=AC.createGain(); o.type=k==="atk"?"sawtooth":"triangle"; o.frequency.value=f; g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(k==="atk"?.08:.16,t+.012); g.gain.exponentialRampToValueAtTime(.0001,t+d); o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t+d+.03); t+=d*.85; }
+  }catch(e){}
+}
+function buzz(pat){ try{ if(!S.ui.mute && navigator.vibrate) navigator.vibrate(pat); }catch(e){} }
 
 
 /* ---------- lista de jogadores ---------- */
@@ -2146,7 +2197,7 @@ const playerKey = name => lookup(name)?.key || "x:" + normName(name);
 const fits = (e, slot) => !!e && e.pos.some(x => SLOT_OK[slot]?.includes(x));
 const posText = e => e.pos.map(x => POS_NAME[x]).join(" / ");
 /* overall na posição: perde 4 em lateral trocado, 8 fora de posição e vai a 45 com goleiro na linha ou jogador de linha no gol */
-const UNKNOWN_OVR = 75;
+const UNKNOWN_OVR = 50;
 const adapted = (e, slot) => !!e && !fits(e, slot) && !(slot==="gol") && !(e.pos.length===1 && e.pos[0]==="GOL") && e.pos.some(x => RELATED[slot]?.includes(x));
 function effOvr(e, slot){
   if(!e) return UNKNOWN_OVR;
@@ -2195,9 +2246,10 @@ function fitHTML(p){
   const name=S.ui.draft.trim(); if(!name || !p.aim) return "";
   const e=lookup(name), lab=POS.find(x=>x.id===p.aim).l;
   if(mustFit(p) && name.length>=3 && (!e || !fits(e,p.aim))) return `<span class="fit off">No modo Sugestões você tem que escolher alguém que joga de ${lab}.</span>`;
-  if(!e) return name.length<3 ? "" : `<span class="fit unk">Não está na nossa lista. Vale se a galera concordar, e entra com overall ${UNKNOWN_OVR}.</span>`;
-  const v=effOvr(e,p.aim);
-  return fits(e,p.aim) ? `<span class="fit ok">Overall ${e.ovr}. Joga de ${esc(posText(e))}, está na posição.</span>` : (adapted(e,p.aim) ? `<span class="fit off">Overall ${e.ovr}. Joga de ${esc(posText(e))}, posição parecida: no ${lab} fica adaptado com ${v}.</span>` : `<span class="fit off">Overall ${e.ovr}, mas joga de ${esc(posText(e))}. Fora de posição no ${lab}, fica com ${v}.</span>`);
+  if(!e) return name.length<3 ? "" : `<div class="pcard unk"><span class="pov">?</span><div><b>${esc(name)}</b><small>Não está na nossa lista. Se escalar, vale ${UNKNOWN_OVR} e fica marcado como fora da lista.</small></div></div>`;
+  const v=effOvr(e,p.aim), nm=e.names.find(x=>normName(x)===normName(name)) || e.names[0];
+  const st = fits(e,p.aim) ? ["ok","Na posição"] : adapted(e,p.aim) ? ["adapt","Adaptado no "+lab+" (−3)"] : (p.aim==="gol"||(e.pos||[]).includes("GOL")) ? ["off","Fora do gol: vale "+v] : ["off","Fora de posição no "+lab+" (−8)"];
+  return `<div class="pcard ${st[0]}"><span class="pov ${ovrTier(v)}">${v}</span><div><b>${esc(nm)}</b><small>${esc(posText(e))} · ${st[1]}</small></div></div>`;
 }
 
 /* ---------- stores ---------- */
@@ -2227,13 +2279,14 @@ function subscribe(){
     if(!meta?.fromCache){ clearTimeout(netTimer); S.ui.net=""; }
     if(!data){ return; }
     const prevTurn = S.room?.turn;
-    const la = data.lastAtk; if(la && la.at!==S.ui.seenAtk){ const first=S.ui.seenAtk===undefined; S.ui.seenAtk=la.at; const tp=data.players?.[la.to]; if(!first && tp && !tp.bot && (S.mode==="local" || la.to===S.me) && Date.now()-la.at<60000) setTimeout(()=>showEvt(S.mode==="local"?"Ataque contra "+tp.name+"!":"Ataque contra você!", la.text, la.k, "atk"), 50); }
+    const la = data.lastAtk; if(la && la.at!==S.ui.seenAtk){ const first=S.ui.seenAtk===undefined; S.ui.seenAtk=la.at; const tp=data.players?.[la.to]; if(!first && tp && !tp.bot && (S.mode==="local" || la.to===S.me) && Date.now()-la.at<60000) { setTimeout(()=>showEvt(S.mode==="local"?"Ataque contra "+tp.name+"!":"Ataque contra você!", la.text, la.k, "atk"), 50); sfx("atk"); buzz([90,60,90]); } }
     S.room = data;
     if(data.status==="lobby") S.screen="lobby";
     else if(data.status==="playing") S.screen="game";
     else if(data.status==="done") S.screen="done";
     setTimeout(scheduleBot, 0);
-    if(prevTurn !== data.turn){ S.ui.newCard=null; S.ui.pick=null; S.ui.swapA=null; S.ui.atk=null; S.ui.draft=""; if(S.mode==="local") S.view=null; }
+    if(prevTurn !== undefined && prevTurn !== data.turn && data.status==="playing"){ const np=data.players?.[data.turn]; const humans=data.order.filter(x=>!data.players[x].bot).length; if(np && !np.bot && (S.mode==="online" ? data.turn===S.me : (humans>1 || data.order.length>1))){ sfx("turn"); buzz(160); } }
+    if(prevTurn !== data.turn){ S.ui.newCard=null; S.ui.cardInfo=null; S.ui.leaveAsk=false; S.ui.pick=null; S.ui.swapA=null; S.ui.atk=null; S.ui.draft=""; if(S.mode==="local") S.view=null; }
     render();
   }, e => { S.ui.net = "A conexão com a sala caiu. Saia e entre de novo."; render(); });
 }
@@ -2428,7 +2481,7 @@ const ONB = [
   {t:"Bem-vindo ao Artilhetra", v0:1, d:"Monte um time de 11 com as letras escondidas no quadro. Na sua vez, primeiro toque na posição do campo que você quer preencher.", v:`<div class="onbv pitchv"><span>GOL</span><span class="hl">CA</span><span>ZAG</span></div>`},
   {t:"Abra um número", d:"Atrás de cada número tem uma letra escondida. Ela vai ser a inicial do seu jogador.", v:`<div class="onbv tilesv"><span>7</span><span>12</span><span class="hl">K</span><span>3</span></div>`},
   {t:"Escale um craque", d:"Digite um jogador com essa letra. Não vale repetir jogador, e fora de posição ele perde pontos de overall.", v:`<div class="onbv namev"><span class="bl">K</span><span class="nm"><b>95</b> Kaká</span></div>`},
-  {t:"Use as cartinhas", d:"Alguns números trazem cartinhas. As douradas ajudam você. As laranjas atacam o adversário: roubar, expulsar, lesionar…", v:`<div class="onbv cardsv"><span class="g">${CARD_ICONS.letter}</span><span class="o">${CARD_ICONS.injury}</span><span class="o">${CARD_ICONS.steal}</span></div>`},
+  {t:"Use as cartinhas", d:"Alguns números trazem cartinhas. As douradas ajudam você. As vermelhas atacam o adversário: roubar, expulsar, lesionar…", v:`<div class="onbv cardsv"><span class="g">${CARD_ICONS.letter}</span><span class="o">${CARD_ICONS.injury}</span><span class="o">${CARD_ICONS.steal}</span></div>`},
   {t:"Quem ganha?", d:"Com os 11 escalados, vence o time com maior overall. Depois publique no mural e deixe a galera votar.", v:`<div class="onbv trophyv">${'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>'}</div>`}
 ];
 function onbHTML(){
@@ -2529,17 +2582,17 @@ async function reveal(idx){
   let c=(p.cards||[])[idx], deyGone=null, deyFirst=false;
   if(c==="dey"){ if(S.room.dey){ deyGone=pname(S.room.dey.by); c=""; } else deyFirst=true; }
   const isBlocked = (p.blocked||[]).includes(L);
-  const patch = isBlocked ? { revealed } : { revealed, pending:{letter:L, idx} };
+  const patch = isBlocked ? { revealed } : { revealed, pending:{letter:L, idx, at:Date.now()} };
   if(c) patch.hand = [...validCards(p), {t:c, r:S.room.round}];
   const deyExtra = deyFirst ? { dey:{by:id, at:Date.now()} } : {};
   const deyTxt = deyGone ? " Achou a cartinha Deyverson, mas ela já tinha saído para "+deyGone+"." : "";
   if(deyGone && !S.botActing) setTimeout(()=>showEvt("O Deyverson já tem dono", "Você achou a cartinha Deyverson, mas "+deyGone+" tirou primeiro. Ela não vale mais para ninguém.", "dey", "atk"), 60);
   if(isBlocked){
     await write({ players:{[id]:patch}, ...deyExtra, log:logPatch(p.name+" abriu o nº "+(idx+1)+", mas a letra "+L+" está bloqueada. Abre outro número."+(c?" Ganhou a cartinha "+CARD_NAME[c]+".":"")+deyTxt) });
-    if(!S.botActing){ if(c){ S.ui.newCard={t:c, blocked:L}; S.ui.pulse=true; render(); } else showEvt("Letra bloqueada", "A letra "+L+" foi bloqueada por um adversário. Abra outro número.", "block", "atk"); } return;
+    if(!S.botActing){ if(c){ S.ui.newCard={t:c, blocked:L}; S.ui.pulse=true; sfx("card"); render(); } else showEvt("Letra bloqueada", "A letra "+L+" foi bloqueada por um adversário. Abra outro número.", "block", "atk"); } return;
   }
   await write({ players:{[id]:patch}, ...deyExtra, log:logPatch(p.name+" abriu o nº "+(idx+1)+" e tirou a letra "+L+(c?" e a cartinha "+CARD_NAME[c]+"!":"")+(deyFirst?" Ninguém mais pode tirar o Deyverson.":"")+(deyGone?"."+deyTxt:"")) });
-  if(c && !S.botActing){ S.ui.newCard={t:c}; S.ui.pulse=true; render(); }
+  if(c && !S.botActing){ S.ui.newCard={t:c}; S.ui.pulse=true; sfx("card"); render(); }
 }
 function whoHas(name){
   const k=playerKey(name);
@@ -2553,13 +2606,19 @@ async function place(nameOverride){
   if(!name){ toast("Digite o nome do jogador primeiro."); document.getElementById("draft")?.focus(); return; }
   if(firstLetter(name)!==pend.letter){ toast("O nome precisa começar com "+pend.letter+"."); return; }
   if(!S.botActing && mustFit(p)){ const ce=lookup(name); if(!ce || !fits(ce,posId)){ const lb=POS.find(x=>x.id===posId).l; showEvt("Escolha alguém da posição", "No modo Sugestões, se existe jogador que joga de "+lb+" com a letra "+pend.letter+", você tem que escolher um deles. Veja as sugestões.", "pos", "help"); return; } }
+  if(!S.botActing && !lookup(name) && S.ui.unkOk!==normName(name)){
+    S.ui.unkOk=normName(name);
+    showEvt("Jogador fora da lista", "“"+name+"” não está na nossa lista de jogadores. Confira se escreveu certo. Para escalar mesmo assim, toque em Chutar de novo: ele entra com overall "+UNKNOWN_OVR+" e fica marcado com ? para todos.", "letter", "help");
+    return;
+  }
   const owner=whoHas(name);
   if(owner){ toast(name+" já foi escalado"+(owner===p.name?" no seu time":" pelo "+owner)+". Escolha outro."); return; }
   const posLabel = POS.find(x=>x.id===posId).l;
   const e = lookup(name), ok = e ? fits(e,posId) : null, nm = e ? e.names.find(x=>normName(x)===normName(name)) || name : name;
-  const slot = {n:nm, l:pend.letter, ok, a:adapted(e,posId), o:e?e.ovr:null, v:effOvr(e,posId)};
+  const slot = {n:nm, l:pend.letter, ok, a:adapted(e,posId), o:e?e.ovr:null, v:effOvr(e,posId), ...(e?{}:{unk:true})};
   const players = clone(S.room.players); players[id] = {...p, team:{...p.team, [posId]:slot}, pending:null, aim:null};
-  await write({ players:{[id]:{ team:{[posId]:slot}, pending:null, aim:null, forced:null, hand:validCards(p) }}, log:logPatch(p.name+" escalou "+nm+" ("+posLabel+")"+(ok===false?(slot.a?" adaptado":" fora de posição"):"")), ...nextTurnPatch(players) });
+  await write({ players:{[id]:{ team:{[posId]:slot}, pending:null, aim:null, forced:null, hand:validCards(p) }}, log:logPatch(p.name+" escalou "+nm+" ("+posLabel+")"+(ok===false?(slot.a?" adaptado":" fora de posição"):"")+(e?"":", fora da lista (vale "+UNKNOWN_OVR+")")), ...nextTurnPatch(players) });
+  S.ui.unkOk=null; if(!S.botActing) sfx("goal");
 }
 async function cardReroll(){
   const id=actor(), p=S.room.players[id];
@@ -2670,6 +2729,8 @@ async function atkDo(k, target, arg){
     extra.skips={[target]:true};
     text=me.name+" usou Perde a vez: "+o.name+" vai pular a próxima jogada";
   }
+  const hitPos = {steal:String(arg||"").split(">")[0], rob:String(arg||"").split(">")[0], expel:arg, injury:arg}[k];
+  if(hitPos && pl[target]) pl[target].hit={pos:hitPos, at:Date.now()};
   await write({ players:pl, ...extra, log:logPatch(text), ...atkNote(target, text, k) });
   if(!S.botActing) showEvt("Cartinha usada!", text.replace(me.name+" usou ",""), k, "atk");
 }
@@ -2679,7 +2740,7 @@ function atkHTML(p){
   let body="";
   if(!a.to){
     body = tg.length ? `<div class="row">${tg.map(id=>`<button class="btn" data-act="atkTo" data-id="${id}">${esc(pname(id))}</button>`).join("")}</div>` : `<p class="note" style="margin:0">${k==="steal" && !teamCount(p) ? "Você precisa ter pelo menos um jogador no time para dar em troca." : k==="rob" && !robSlots(p).length ? "Você não tem posição vazia para colocar o jogador roubado." : "Nenhum adversário pode ser alvo dessa cartinha agora."}</p>`;
-    return `<div class="atkbox"><b>${CARD_NAME[k]}:</b> escolha o adversário.${body}<button class="btn ghost" data-act="atkCancel">Cancelar</button></div>`;
+    return `<div class="atkbox">${atkSteps(k,1)}<p class="note" style="margin:0">${CARD_DESC[k]}</p><b>Escolha o adversário</b>${body}</div>`;
   }
   if(k==="rob"){
     if(!a.his) body = POS.filter(x=>o.team?.[x.id]).map(x=>`<button class="btn" data-act="atkPick" data-a="${x.id}">${x.l}: pegar ${esc(o.team[x.id].n)} (${slotOvr(o.team[x.id])})</button>`).join("");
@@ -2698,7 +2759,11 @@ function atkHTML(p){
     body = `<div class="letters">${AL.split("").map(L=>`<button data-act="atkL" data-l="${L}" ${bl.includes(L)?"disabled":""} aria-pressed="${sel.includes(L)}" class="${sel.includes(L)?"on":""}">${L}</button>`).join("")}</div><button class="btn gold" data-act="atkGo" ${sel.length?"":"disabled"}>Bloquear ${sel.join(", ")||"letras"}</button>`; }
   else body = `<button class="btn gold" data-act="atkGo">Usar contra ${esc(o.name)}</button>`;
   const hint = k==="steal" ? (a.his ? "" : `Escolha qualquer jogador de ${esc(o.name)}. Depois você escolhe qualquer jogador seu para dar em troca.`) : k==="rob" ? (a.his ? "" : `Escolha qualquer jogador de ${esc(o.name)}. Ele vem para o seu time e ${esc(o.name)} fica com a posição vazia.`) : k==="block" ? `Escolha até 3 letras que ${esc(o.name)} não vai poder usar até o fim do jogo.` : k==="choosepos" ? `Escolha a posição que ${esc(o.name)} vai ter que preencher na próxima vez.` : k==="dey" ? `${esc(o.name)} vai ser obrigado a escalar o Deyverson na próxima vez dele, na posição que ele escolher. Quem estiver lá sai do time.` : "";
-  return `<div class="atkbox"><b>${CARD_NAME[k]} contra ${esc(o.name)}</b>${hint?`<p class="note" style="margin:0">${hint}</p>`:""}<div class="stack" style="gap:6px">${body}</div><button class="btn ghost" data-act="atkCancel">Cancelar</button></div>`;
+  return `<div class="atkbox">${atkSteps(k, (k==="steal"||k==="rob") && a.his ? 3 : 2)}<b>Contra ${esc(o.name)}</b>${hint?`<p class="note" style="margin:0">${hint}</p>`:""}<div class="stack" style="gap:6px">${body}</div><button class="btn ghost" data-act="atkBackStep">Escolher outro adversário</button></div>`;
+}
+function atkSteps(k, n){
+  const st = k==="steal" ? ["Adversário","Jogador dele","Seu jogador"] : k==="rob" ? ["Adversário","Jogador dele","Sua posição"] : ["expel","injury"].includes(k) ? ["Adversário","Jogador"] : k==="choosepos" ? ["Adversário","Posição"] : k==="block" ? ["Adversário","Letras"] : ["Adversário","Confirmar"];
+  return `<ol class="stepper">${st.map((l,i)=>`<li class="${i+1<n?"done":i+1===n?"now":""}"><span>${i+1}</span>${l}</li>`).join("")}</ol>`;
 }
 
 /* ---------- robôs ---------- */
@@ -2826,14 +2891,48 @@ async function skipTurn(){
   const players=clone(S.room.players); players[id]={...p, pending:null, aim:null};
   await write({ players:{[id]:{pending:null, aim:null}}, log:logPatch("O anfitrião pulou a vez de "+p.name), ...nextTurnPatch(players) });
 }
+async function shareTeam(id){
+  const p=S.room?.players?.[id]; if(!p) return;
+  try{
+    toast("Gerando a imagem do time…");
+    try{ await document.fonts.ready; }catch(e){}
+    const W=1080, H=1350, c=document.createElement("canvas"); c.width=W; c.height=H; const g=c.getContext("2d");
+    g.fillStyle="#0B0F14"; g.fillRect(0,0,W,H);
+    const rg=g.createRadialGradient(W/2,0,40,W/2,0,700); rg.addColorStop(0,"rgba(212,175,55,.35)"); rg.addColorStop(1,"rgba(212,175,55,0)"); g.fillStyle=rg; g.fillRect(0,0,W,H);
+    const img=new Image(); img.src=LOGO_SRC; await img.decode(); const lw=440, lh=lw*img.height/img.width; g.drawImage(img,(W-lw)/2,24,lw,lh);
+    let y=24+lh+70;
+    g.textAlign="center"; g.fillStyle="#FFFFFF"; g.font="italic 900 58px Montserrat, sans-serif"; g.fillText(p.name, W/2, y);
+    const ov=teamOvr(p)||0; g.font="800 30px Montserrat, sans-serif"; g.fillStyle="#D4AF37"; g.fillText("OVERALL DO TIME  "+ov, W/2, y+48);
+    const px=70, py=y+80, pw=W-140, ph=H-py-90;
+    const pg=g.createLinearGradient(0,py,0,py+ph); pg.addColorStop(0,"#1f7a43"); pg.addColorStop(1,"#14552f"); g.fillStyle=pg;
+    const rr=(x,y,w,h,r)=>{ g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r); g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath(); };
+    rr(px,py,pw,ph,28); g.fill();
+    g.strokeStyle="rgba(255,255,255,.35)"; g.lineWidth=4; rr(px+14,py+14,pw-28,ph-28,18); g.stroke();
+    g.beginPath(); g.moveTo(px+14,py+ph/2); g.lineTo(px+pw-14,py+ph/2); g.stroke(); g.beginPath(); g.arc(W/2,py+ph/2,90,0,Math.PI*2); g.stroke();
+    g.strokeRect(W/2-170,py+14,340,110); g.strokeRect(W/2-170,py+ph-124,340,110);
+    for(const pos of POS){
+      const t=p.team?.[pos.id], cx=px+pw*pos.x/100, cy=py+ph*pos.y/100, bw=200, bh=96;
+      g.fillStyle=t?"rgba(11,15,20,.88)":"rgba(11,15,20,.35)"; rr(cx-bw/2,cy-bh/2,bw,bh,16); g.fill();
+      g.strokeStyle=t&&t.ok===false?"#D4AF37":"rgba(255,255,255,.75)"; g.lineWidth=3; g.stroke();
+      g.fillStyle="#B4BCC8"; g.font="800 20px Montserrat, sans-serif"; g.fillText(pos.l, cx, cy-20);
+      if(t){ let nm=t.n, fs=26; g.font="800 "+fs+"px Montserrat, sans-serif"; while(g.measureText(nm).width>bw-18 && fs>19){ fs--; g.font="800 "+fs+"px Montserrat, sans-serif"; } while(g.measureText(nm).width>bw-18 && nm.length>3) nm=nm.slice(0,-2)+"…"; g.fillStyle="#FFFFFF"; g.fillText(nm, cx, cy+12);
+        g.fillStyle="#D4AF37"; g.font="900 24px Montserrat, sans-serif"; g.fillText(String(slotOvr(t)), cx, cy+40); }
+    }
+    g.fillStyle="#E5E7EB"; g.font="700 28px Montserrat, sans-serif"; g.fillText("Monte o seu: "+location.host+location.pathname.replace(/\/$/,""), W/2, H-38);
+    const blob=await new Promise(res=>c.toBlob(res,"image/png")); const file=new File([blob],"artilhetra-"+(p.name||"time").replace(/[^a-z0-9]+/gi,"-").toLowerCase()+".png",{type:"image/png"});
+    if(navigator.canShare && navigator.canShare({files:[file]})){ try{ await navigator.share({files:[file], title:"Meu time no Artilhetra", text:"Olha o meu time no Artilhetra! Overall "+ov+". "+location.origin+location.pathname}); return; }catch(e){ if(e && e.name==="AbortError") return; } }
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=file.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+    toast("Imagem do time salva. É só mandar no grupo!");
+  }catch(e){ console.error(e); toast("Não consegui gerar a imagem agora."); }
+}
 async function vote(target){ await write({ votes:{[S.me]:target} }); }
 
 /* ---------- render ---------- */
 function render(){
   const a=document.activeElement, keep = a && a.id ? {id:a.id, s:a.selectionStart, e:a.selectionEnd} : null;
   const app=document.getElementById("app");
-  app.innerHTML = S.screen==="mural" ? vMural() : S.screen==="home" ? vHome() : S.screen==="local" ? vLocal() : S.screen==="lobby" ? vLobby() : S.screen==="game" ? vGame() : vDone();
-  app.insertAdjacentHTML("beforeend", evtHTML() + newCardHTML() + onbHTML());
+  app.innerHTML = S.screen==="mural" ? vMural() : S.screen==="home" ? vHome() : S.screen==="local" ? vLocal() : S.screen==="bot" ? vBot() : S.screen==="lobby" ? vLobby() : S.screen==="game" ? vGame() : vDone();
+  app.insertAdjacentHTML("beforeend", evtHTML() + newCardHTML() + leaveHTML() + onbHTML());
   document.body.classList.toggle("withbar", !!app.querySelector(".cardbar"));
   if(keep){ const el=document.getElementById(keep.id); if(el){ el.focus(); try{ if(keep.s!=null) el.setSelectionRange(keep.s,keep.e); }catch(e){} } }
 }
@@ -2902,10 +3001,22 @@ function vHome(){
     ${rulesHTML()}
   </div>`;
 }
+function vBot(){
+  const lvl=S.ui.botLevel||"medio", n=S.ui.botCount||1, h=S.ui.hints||"auto";
+  return `<div class="top"><h2 style="font-size:30px">Contra o robô</h2><button class="btn ghost" data-act="home">Voltar</button></div>
+  <div class="panel stack" style="max-width:560px">
+    <label class="stack" style="gap:6px"><span class="lbl">Seu nome</span><input id="name" maxlength="18" placeholder="Ex.: Igão" value="${esc(S.ui.name)}" autocomplete="nickname"></label>
+    <div class="stack" style="gap:6px"><span class="lbl">Nível do robô</span><div class="seg">${Object.entries(BOT_LEVEL).map(([k,v])=>`<button data-act="botLevel" data-v="${k}" aria-pressed="${lvl===k}">${v}</button>`).join("")}</div><p class="note" style="margin:0">${({facil:"Erra bastante e escala qualquer um. Bom para aprender.",medio:"Joga bem, mas às vezes escolhe mal.",craque:"Conhece todo mundo e usa as cartinhas sem dó."})[lvl]}</p></div>
+    <div class="stack" style="gap:6px"><span class="lbl">Quantos robôs</span><div class="seg">${[1,2,3].map(k=>`<button data-act="botCount" data-v="${k}" aria-pressed="${n===k}">${k}</button>`).join("")}</div></div>
+    <div class="stack" style="gap:6px"><span class="lbl">Ajuda para escalar</span><div class="seg">${[["off","Sem dicas"],["auto","Autocompletar"],["full","Sugestões"]].map(([k,v])=>`<button data-act="hintsBot" data-v="${k}" aria-pressed="${h===k}">${v}</button>`).join("")}</div></div>
+    <div class="err" role="alert">${esc(S.ui.err)}</div>
+    <button class="btn gold big" data-act="startBot"><svg class="bi" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l13 8-13 8z" fill="currentColor"/></svg>Começar</button>
+  </div>`;
+}
 function vLocal(){
   return `<div class="top"><h2 style="font-size:30px">Num aparelho só</h2><button class="btn ghost" data-act="home">Voltar</button></div>
   <div class="panel stack" style="max-width:560px">
-    <p class="note">Adicione quem vai jogar. Na vez de cada um, o celular passa de mão em mão. Para jogar sozinho, coloque o seu nome e adicione um ou mais robôs.</p>
+    <p class="note">Modo presencial: adicione quem vai jogar e, na vez de cada um, o celular passa de mão em mão. Se quiser, coloque robôs na partida também.</p>
     <div class="row" style="flex-wrap:nowrap"><input id="localDraft" maxlength="18" placeholder="Nome do jogador" value="${esc(S.ui.localDraft)}"><button class="btn" data-act="addLocal">Adicionar</button></div>
     <div class="stack" style="gap:6px"><span class="lbl">Adicionar robô</span><div class="row">${Object.entries(BOT_LEVEL).map(([k,v])=>`<button class="btn" data-act="addBotLocal" data-l="${k}">Robô ${v}</button>`).join("")}</div></div>
     <ul class="plist">${S.ui.localNames.map((n,i)=>`<li><span>${esc(n.name)}${n.bot?` <span class="lbl">robô ${BOT_LEVEL[n.level]}</span>`:""}</span><button class="btn ghost" data-act="rmLocal" data-i="${i}" aria-label="Remover ${esc(n.name)}">Remover</button></li>`).join("") || '<li class="note">Ninguém ainda.</li>'}</ul>
@@ -2943,9 +3054,9 @@ function pitchHTML(p, opts={}){
       const mode = interactive ? (S.ui.pick==="swap" ? "swap" : (S.ui.pick==="pos" && pend ? "pos" : "aim")) : null;
       const can = mode==="swap" ? !!t : mode==="pos" ? !t : (interactive && !pend && !t);
       const act = mode==="swap" ? "swapsel" : mode==="pos" ? "reaim" : "aim";
-      const sel = mode==="swap" && S.ui.swapA===pos.id;
-      return `<button class="slot ${t?"full":""} ${t&&t.ok===false?"off":""} ${t&&t.a?"adapt":""} ${can?"can":""} ${aimed||sel?"aim":""}" ${can?`data-act="${act}" data-pos="${pos.id}"`:"disabled"} style="left:${pos.x}%;top:${pos.y}%" aria-pressed="${aimed?"true":"false"}" aria-label="${pos.l}${t?": "+esc(t.n):" vazia"}">
-        ${t?`<span class="lt">${esc(t.l)}</span><span class="ov ${ovrTier(slotOvr(t))}">${slotOvr(t)}</span>${t.inj?'<span class="injb" title="Lesionado: -10 de overall">−10</span>':""}`:""}<span class="pos">${pos.l}${t&&t.ok===false?(t.a?" · adapt.":" · fora"):""}${t&&t.inj?" · lesão":""}</span>${t?`<span class="nm">${esc(t.n)}</span>`:""}${aimed && pend?`<span class="nm">${esc(pend.letter)}…</span>`:""}</button>`;
+      const sel = mode==="swap" && S.ui.swapA===pos.id, hit = p.hit && p.hit.pos===pos.id && Date.now()-p.hit.at<8000;
+      return `<button class="slot ${hit?"hit":""} ${t&&t.unk?"unkp":""} ${t?"full":""} ${t&&t.ok===false?"off":""} ${t&&t.a?"adapt":""} ${can?"can":""} ${aimed||sel?"aim":""}" ${can?`data-act="${act}" data-pos="${pos.id}"`:"disabled"} style="left:${pos.x}%;top:${pos.y}%" aria-pressed="${aimed?"true":"false"}" aria-label="${pos.l}${t?": "+esc(t.n):" vazia"}">
+        ${t?`<span class="lt">${esc(t.l)}</span><span class="ov ${ovrTier(slotOvr(t))}">${slotOvr(t)}</span>${t.inj?'<span class="injb" title="Lesionado: -10 de overall">−10</span>':""}${t.unk?'<span class="unkb" title="Fora da lista">?</span>':""}`:""}<span class="pos">${pos.l}${t&&t.ok===false?(t.a?" · adapt.":" · fora"):""}${t&&t.inj?" · lesão":""}</span>${t?`<span class="nm">${esc(t.n)}</span>`:""}${aimed && pend?`<span class="nm">${esc(pend.letter)}…</span>`:""}</button>`;
     }).join("")}</div>`;
 }
 function boardHTML(p, mine){
@@ -2972,9 +3083,9 @@ function handHTML(p, mine){
   return `<div class="stack" style="gap:8px"><div class="cards">${hand.map(c=>{
     const usable = mine && (isAtk(c.t) ? atkTargets(c.t).length>0 : c.t==="swap" ? teamCount(p)>=2 : c.t==="pos" ? !!pend && teamCount(p)<10 : !!p.aim && (c.t==="reroll" ? !!pend : (c.t==="repeat" ? pastLetters(p).length>0 : true)));
     const act = isAtk(c.t) ? "atk" : c.t==="reroll" ? "cReroll" : "cPick";
-    const exp = c.t==="stealcard" ? "não vence: use quando quiser" : c.r + 1 > r.round ? "vale até a próxima rodada" : "última rodada!";
-    return `<button class="card ${isAtk(c.t)?"atkcard":""}" ${usable?`data-act="${act}" data-k="${c.t}"`:"disabled"} aria-pressed="${S.ui.pick===c.t?"true":"false"}">${CARD_ICONS[c.t]}<b>${CARD_NAME[c.t]}</b><span class="cdesc">${CARD_DESC[c.t]}</span><small>${exp}</small>${isAtk(c.t) && !usable ? `<small class="why">${!mine ? "Use na sua vez" : "Nenhum adversário pode ser alvo agora"}</small>` : ""}</button>`;
-  }).join("")}</div>${picker}${mine?atkHTML(p):""}${(p.blocked||[]).length?`<p class="note" style="margin:0">Letras bloqueadas para você: <b>${p.blocked.join(", ")}</b></p>`:""}</div>`;
+    const [bcls, btxt] = expBadge(c, r);
+    return `<button class="card ${isAtk(c.t)?"atkcard":""} ${usable?"":"dim"}" data-act="cInfo" data-k="${c.t}" data-u="${usable?1:""}" aria-pressed="${S.ui.pick===c.t?"true":"false"}"><span class="expb ${bcls}">${btxt}</span>${CARD_ICONS[c.t]}<b>${CARD_NAME[c.t]}</b><span class="cdesc">${CARD_SHORT[c.t]}</span>${!usable ? `<small class="why">${!mine ? "Use na sua vez" : "Agora não dá para usar"}</small>` : ""}</button>`;
+  }).join("")}</div>${picker}${(p.blocked||[]).length?`<p class="note" style="margin:0">Letras bloqueadas para você: <b>${p.blocked.join(", ")}</b></p>`:""}</div>`;
 }
 function stepOf(p){ if(p.deyPend) return "dey"; if(S.ui.pick==="pos" && p.pending) return "reaim"; if(!p.aim) return "aim"; if(!p.pending) return "reveal"; return "name"; }
 function stepperHTML(step){
@@ -2989,20 +3100,21 @@ function actionHTML(p){
   if(step==="aim") return `${stepperHTML(step)}<div class="panel stack"><h3 class="stage-h">Toque na posição que você quer preencher</h3>${pitchHTML(p,{interactive:true})}</div>`;
   if(step==="reveal"){
     if(p.revealed.length>=26) return `${stepperHTML(step)}<div class="panel stack"><h3 class="stage-h">O quadro acabou</h3><p class="note" style="margin:0">Escolha uma letra para o ${lab}.</p><div class="letters">${AL.split("").filter(L=>!(p.blocked||[]).includes(L)).map(L=>`<button data-act="free" data-l="${L}">${L}</button>`).join("")}</div></div>`;
-    return `${stepperHTML(step)}<div class="panel stack"><div class="row" style="justify-content:space-between;align-items:center"><h3 class="stage-h">Abra um número</h3><span class="poschip">${lab}${p.forced?"":` <button class="linkbtn" data-act="unaim">trocar</button>`}</span></div>
+    return `${stepperHTML(step)}<div class="panel stack"><div class="row" style="justify-content:space-between;align-items:center"><h3 class="stage-h">Abra um número</h3><span class="row" style="gap:6px;align-items:center"><span class="poschip">${lab}</span>${p.forced?"":`<button class="btn mini" data-act="unaim">Trocar posição</button>`}</span></div>
       ${p.forced?`<p class="note" style="margin:0">Um adversário escolheu a sua posição desta vez: você tem que escalar o <b>${lab}</b>.</p>`:""}
       ${boardHTML(p,true)}
       ${(p.blocked||[]).length?`<p class="note" style="margin:0">Letras bloqueadas para você: <b>${p.blocked.join(", ")}</b></p>`:""}</div>`;
   }
   const L=p.pending.letter;
   return `${stepperHTML(step)}<div class="panel action">
-    <div class="row" style="flex-wrap:nowrap;align-items:center"><div class="bigletter">${L}</div>
+    <div class="row" style="flex-wrap:nowrap;align-items:center"><div class="bigletter ${p.pending.at && Date.now()-p.pending.at<1500 ? "flip":""}">${L}</div>
       <div class="stack" style="gap:6px;flex:1;min-width:0"><label class="lbl" for="draft">${lab} com a letra ${L}</label>
       <input id="draft" maxlength="28" placeholder="Digite um jogador com ${L}" value="${esc(S.ui.draft)}" autocomplete="off" autocapitalize="words"></div></div>
     <div id="fitnote">${fitHTML(p)}</div>
     <div id="sugg" class="stack" style="gap:6px">${suggHTML(p)}</div>
     <button class="btn gold big" data-act="place"><span class="balli">${BALL_SVG}</span>Chutar: escalar no ${lab}</button>
     ${(p.passes||0)>=1 ? '<p class="note" style="margin:0">Você já usou o seu passe nesta partida.</p>' : '<button class="linkbtn" data-act="pass">Não lembro de ninguém: passar a vez (só 1 vez por partida)</button>'}
+    <div class="mypitch stack" style="gap:6px"><div class="row" style="justify-content:space-between"><span class="lbl">Seu time · ${teamCount(p)}/11</span>${teamOvr(p)?`<span class="ovrb ${ovrTier(teamOvr(p))}">OVR ${teamOvr(p)}</span>`:""}</div>${pitchHTML(p,{mini:true})}</div>
   </div>`;
 }
 function cardbarHTML(p, mine){
@@ -3011,9 +3123,30 @@ function cardbarHTML(p, mine){
   return `<div class="cardbar"><button class="btn cardbtn ${S.ui.pulse&&hand.length?"pulse":""}" data-act="sheet" ${hand.length?"":"disabled"}><span class="cardicon">${CARD_ICONS.letter}</span>Cartinhas <b>${hand.length}</b>${atk?` <span class="atkdot">${atk} de ataque</span>`:""}</button>
     <span class="note cardhint">${!hand.length ? "Alguns números trazem cartinhas." : mine ? "Toque para ver e usar." : "Você pode usar na sua vez."}</span></div>`;
 }
+function expBadge(c, r=S.room){ return c.t==="stealcard" ? ["inf","∞ não vence"] : c.r + 1 > r.round ? ["ok","2 rodadas"] : ["last","Última!"]; }
+function cardUsable(p, t, mine){ const pend=p.pending; return mine && (isAtk(t) ? atkTargets(t).length>0 : t==="swap" ? teamCount(p)>=2 : t==="pos" ? !!pend && teamCount(p)<10 : !!p.aim && (t==="reroll" ? !!pend : (t==="repeat" ? pastLetters(p).length>0 : true))); }
+function cardWhy(p, t, mine){
+  if(!mine) return "Você pode usar esta cartinha na sua vez.";
+  if(isAtk(t)) return t==="steal" && !teamCount(p) ? "Você precisa ter pelo menos um jogador no time para dar em troca." : t==="rob" && !robSlots(p).length ? "Você não tem posição vazia para colocar o jogador roubado." : t==="dey" && deyPlaced() ? "O Deyverson já está em um time." : "Nenhum adversário pode ser alvo dessa cartinha agora.";
+  if(t==="pos") return "Use depois de abrir o número, para levar a letra para outra posição vazia.";
+  if(t==="reroll") return "Use depois de abrir o número, para trocar a letra que saiu.";
+  if(t==="repeat" && p.aim && !pastLetters(p).length) return "Você ainda não escalou ninguém, então não tem letra para repetir.";
+  return "Escolha primeiro a posição no campo.";
+}
 function sheetHTML(p, mine){
   if(!S.ui.sheet) return "";
-  return `<div class="sheet-bg" data-act="sheetClose"></div><div class="sheet" role="dialog" aria-label="Suas cartinhas"><div class="row" style="justify-content:space-between"><h3 style="font-size:24px">Suas cartinhas</h3><button class="btn ghost" data-act="sheetClose">Fechar</button></div>${handHTML(p, mine)}</div>`;
+  let title="Suas cartinhas", body;
+  if(S.ui.atk && mine){ title=CARD_NAME[S.ui.atk.k]; body=atkHTML(p); }
+  else if(S.ui.cardInfo){ const t=S.ui.cardInfo, c=validCards(p).find(x=>x.t===t); if(!c){ S.ui.cardInfo=null; return sheetHTML(p, mine); }
+    const u=cardUsable(p,t,mine), [bcls,btxt]=expBadge(c);
+    title="Cartinha";
+    body=`<div class="ncard big ${isAtk(t)?"atk":""}"><span class="expb ${bcls}">${btxt}</span><span class="ncico">${CARD_ICONS[t]}</span><b>${CARD_NAME[t]}</b><p>${CARD_DESC[t]}</p><small>${isAtk(t)?"Cartinha de ataque":"Cartinha de ajuda"} · ${CARD_WHEN[t]||""}</small></div>
+      ${u ? "" : `<p class="note" style="margin:0;text-align:center">${cardWhy(p,t,mine)}</p>`}
+      <div class="row" style="justify-content:center"><button class="btn" data-act="cBack">Voltar</button>${u?`<button class="btn gold" data-act="cUse" data-k="${t}">Usar agora</button>`:""}</div>`;
+  }
+  else body=handHTML(p, mine);
+  const back = S.ui.atk && mine ? `<button class="btn ghost" data-act="atkCancel">Voltar</button>` : `<button class="btn ghost" data-act="sheetClose">Fechar</button>`;
+  return `<div class="sheet-bg" data-act="sheetClose"></div><div class="sheet" role="dialog" aria-label="${esc(title)}"><div class="row" style="justify-content:space-between"><h3 style="font-size:24px">${esc(title)}</h3>${back}</div>${body}</div>`;
 }
 function newCardHTML(){
   const n=S.ui.newCard; if(!n || S.screen!=="game") return "";
@@ -3024,6 +3157,11 @@ function newCardHTML(){
     <div class="ncard ${atk?"atk":""}"><span class="ncico">${CARD_ICONS[n.t]}</span><b>${CARD_NAME[n.t]}</b><p>${CARD_DESC[n.t]}</p><small>${atk?"Cartinha de ataque":"Cartinha de ajuda"} · vale nesta rodada e na próxima</small></div>
     <div class="row" style="width:100%;justify-content:center"><button class="btn" data-act="ncKeep">Guardar</button><button class="btn gold" data-act="ncUse">Ver minhas cartinhas</button></div>
   </div></div>`;
+}
+function leaveHTML(){
+  if(!S.ui.leaveAsk || S.screen!=="game") return "";
+  const host = S.mode==="online" && S.room?.hostId===S.me;
+  return `<div class="nc-bg" role="dialog" aria-label="Sair da partida"><div class="panel stack confirm"><h3 style="font-size:24px">Sair da partida?</h3><p class="note" style="margin:0">${host ? "Você é o anfitrião: se sair, a partida para para todo mundo." : S.mode==="online" ? "Você sai da sala e o seu time fica para trás." : "A partida em andamento vai ser perdida."}</p><div class="row" style="justify-content:flex-end"><button class="btn" data-act="leaveNo">Continuar jogando</button><button class="btn danger" data-act="leave">Sair</button></div></div></div>`;
 }
 function evtHTML(){
   const e=S.ui.evt; if(!e) return "";
@@ -3039,11 +3177,12 @@ function vGame(){
   const viewingMine = viewId===me && myTurn;
   const host = S.mode==="online" && r.hostId===S.me;
   const showCards = mp && !mp.bot && (S.mode==="online" || myTurn);
-  return `<div class="top"><div class="row"><span class="minilogo"><img src="${ICON_SRC}" alt="" width="26" height="26"><span>ARTILHE<b>TRA</b></span></span>${r.code?`<span class="lbl">Sala</span><span class="code">${esc(r.code)}</span>`:""}<span class="lbl">Rodada ${r.round}</span></div><div class="row"><button class="btn ghost" data-act="onb" aria-label="Como jogar">?</button><button class="btn ghost" data-act="leave">Sair</button></div></div>
+  return `<div class="top"><div class="row"><span class="minilogo"><img src="${ICON_SRC}" alt="" width="26" height="26"><span>ARTILHE<b>TRA</b></span></span>${r.code?`<span class="lbl">Sala</span><span class="code">${esc(r.code)}</span>`:""}<span class="lbl">Rodada ${r.round}</span></div><div class="row"><button class="btn ghost iconbtn" data-act="mute" aria-label="${S.ui.mute?"Ligar som":"Desligar som"}" title="${S.ui.mute?"Ligar som":"Desligar som"}">${S.ui.mute?SPK_OFF:SPK_ON}</button><button class="btn ghost" data-act="onb" aria-label="Como jogar">?</button><button class="btn ghost" data-act="leaveAsk">Sair</button></div></div>
   ${S.ui.net?`<p class="err">${esc(S.ui.net)}</p>`:""}
-  <div class="turn ${myTurn?"mine":""}"><div><div class="lbl">${botNow?"O robô está jogando":(S.mode==="local" && r.order.filter(x=>!r.players[x].bot).length>1)?"Passe o celular para":"Agora é a vez de"}</div><h2>${myTurn && S.mode==="online" ? "Sua vez!" : (myTurn && r.order.filter(x=>!r.players[x].bot).length===1) ? "Sua vez, "+esc(turnP?.name)+"!" : esc(turnP?.name)}${botNow?' <span class="thinking">pensando…</span>':""}</h2></div>
+  <div class="turn ${myTurn?"mine":""}"><div>${myTurn && S.mode!=="local" ? "" : myTurn && r.order.filter(x=>!r.players[x].bot).length===1 ? "" : `<div class="lbl">${botNow?"O robô está jogando":(S.mode==="local" && r.order.filter(x=>!r.players[x].bot).length>1)?"Passe o celular para":"Agora é a vez de"}</div>`}<h2>${myTurn && S.mode==="online" ? "Sua vez!" : (myTurn && r.order.filter(x=>!r.players[x].bot).length===1) ? "Sua vez, "+esc(turnP?.name)+"!" : esc(turnP?.name)}${botNow?' <span class="thinking">pensando…</span>':""}</h2></div>
     ${host && !myTurn ? `<button class="btn ghost" data-act="skip">Pular a vez de ${esc(turnP?.name)}</button>` : ""}</div>
-  <div class="tabs" role="group" aria-label="Times">${r.order.map(id=>{const p=r.players[id];return `<button class="tab" data-act="view" data-id="${id}" aria-pressed="${id===viewId}">${id===r.turn?'<span class="dot"></span>':""}${esc(p.name)}${id===S.me&&S.mode==="online"?" (você)":""} <small>${teamCount(p)}/11${teamOvr(p)?" · "+teamOvr(p):""}</small></button>`;}).join("")}</div>
+  <div class="tabs" role="group" aria-label="Times">${r.order.map(id=>{const p=r.players[id];return `<button class="tab" data-act="view" data-id="${id}" aria-pressed="${id===viewId}">${id===r.turn?'<span class="dot"></span>':""}${esc(p.name)}${id===S.me&&S.mode==="online"?" (você)":""} <small>${teamCount(p)}/11</small>${teamOvr(p)?`<span class="tovr ${ovrTier(teamOvr(p))}">${teamOvr(p)}</span>`:""}<i class="tprog" style="width:${Math.round(teamCount(p)/11*100)}%"></i></button>`;}).join("")}</div>
+  ${(r.log||[]).length ? `<p class="lastplay"><span class="lbl">Último lance</span> ${esc(r.log[r.log.length-1].text)}</p>` : ""}
   <div class="game2 ${viewingMine?"playing":""}">
     <div class="stack">
       ${viewingMine ? actionHTML(vp) : `<div class="panel stack"><div class="row" style="justify-content:space-between"><span class="lbl">${viewId===me?"Seu time":"Time de "+esc(vp.name)}</span>${teamOvr(vp)?`<span class="ovrb ${ovrTier(teamOvr(vp))}">OVR ${teamOvr(vp)}</span>`:""}</div>${pitchHTML(vp,{})}
@@ -3083,6 +3222,7 @@ function vDone(){
   <p class="note" style="margin:0 0 14px">${online ? (myVote ? "Voto registrado. Dá para mudar até todo mundo votar." : "Qual time ficou melhor? Vote em um time que não seja o seu.") : "Qual time ficou melhor? Decidam aí na resenha."}</p>
   <div class="teams">${[...r.order].sort((a,b)=>(teamOvr(r.players[b])||0)-(teamOvr(r.players[a])||0)).map(id=>{const p=r.players[id];return `<div class="panel team stack"><div class="row" style="justify-content:space-between"><div><h3>${esc(p.name)}</h3><span class="note">${Object.values(p.team||{}).filter(t=>t.ok!==false).length} de 11 na posição · venceu ${wins[id]||0} posições</span></div><div class="teamovr ${ovrTier(teamOvr(p)||0)}"><small>OVR</small>${teamOvr(p)??"—"}</div>${online?`<span class="votes">${tally[id]||0} voto${(tally[id]||0)===1?"":"s"}</span>`:""}</div>
     ${pitchHTML(p,{mini:true})}
+    ${(online ? id===S.me : !p.bot) ? `<button class="btn" data-act="shareTeam" data-id="${id}">Compartilhar ${online || r.order.filter(x=>!r.players[x].bot).length===1 ? "meu time" : "o time de "+esc(p.name)}</button>` : ""}
     ${online && id!==S.me ? `<button class="btn ${myVote===id?"gold":""}" data-act="vote" data-id="${id}">${myVote===id?"Seu voto":"Votar neste time"}</button>`:""}</div>`;}).join("")}</div>
   <div class="panel stack" style="margin-top:16px"><span class="lbl">Posição por posição</span><p class="note" style="margin:0">Em destaque, quem tem o maior overall em cada posição. Adaptado perde 3 pontos e fora de posição perde 8.</p><div class="cmpwrap"><table class="cmp"><thead><tr><th>Posição</th>${r.order.map(id=>`<th>${esc(r.players[id].name)}</th>`).join("")}</tr></thead><tbody>${KEYS.map(k=>{const pos=POS.find(x=>x.id===k);return `<tr><th>${pos.l}</th>${r.order.map(id=>{const t=r.players[id].team?.[k], v=slotOvr(t);return `<td class="${t&&t.ok===false?"offp":""} ${t&&v===best[k]?"win":""}">${t?`<span class="ovrb ${ovrTier(v)}">${v}</span> ${esc(t.n)}`:"—"}${t&&t.ok===false?(t.a?" <small>adaptado</small>":" <small>fora</small>"):""}${t&&t.inj?" <small>lesão</small>":""}</td>`;}).join("")}</tr>`;}).join("")}</tbody></table></div></div>
   <div class="row" style="margin-top:16px">${r.published ? `<button class="btn gold" data-act="muralOpen" data-id="${r.published}">Ver no mural</button><button class="btn" data-act="muralCopy" data-id="${r.published}">Copiar link da votação</button>` : `<button class="btn gold" data-act="muralPublish">Publicar no mural (24h)</button>`}${host ? `<button class="btn" data-act="rematch">Jogar de novo</button>` : ""}</div>
@@ -3137,14 +3277,14 @@ async function act(a, d={}){
       case "muralCopy": return copyMural(d.id);
       case "home": if(S.screen==="mural" && S.room){ S.screen = S.room.status==="done"?"done":S.room.status==="playing"?"game":"lobby"; if(location.hash) history.replaceState(null,"",location.pathname); return render(); } S.screen="home"; S.ui.err=""; if(location.hash) history.replaceState(null,"",location.pathname); return render();
       case "addBotLocal": { if(S.ui.localNames.length>=8){ S.ui.err="Máximo de 8 jogadores."; return render(); } S.ui.localNames.push({name:nextBotName(S.ui.localNames.map(x=>x.name)), bot:true, level:d.l}); S.ui.err=""; return render(); }
-      case "vsBot": { const me=(S.ui.name||"").trim()||"Você"; S.ui.localNames=[{name:me},{name:nextBotName([]), bot:true, level:"medio"}]; S.screen="local"; S.ui.err=""; return render(); }
+      case "vsBot": S.screen="bot"; S.ui.err=""; return render();
       case "addBotRoom": { const r=S.room; if(!r || r.hostId!==S.me) return; const ids=Object.keys(r.players); if(ids.length>=8){ toast("Máximo de 8 jogadores."); return; } const id="bot"+Math.random().toString(36).slice(2,8); await write({players:{[id]:{name:nextBotName(ids.map(x=>r.players[x].name)), bot:true, level:d.l, joinedAt:Date.now()}}}); return; }
       case "rmBotRoom": { if(S.room?.hostId!==S.me) return; await write({players:{[d.id]:null}}); return; }
       case "addLocal": { const n=S.ui.localDraft.trim(); if(!n) return; if(S.ui.localNames.length>=8){ S.ui.err="Máximo de 8 jogadores."; return render(); } S.ui.localNames.push({name:n}); S.ui.localDraft=""; S.ui.err=""; render(); document.getElementById("localDraft")?.focus(); return; }
       case "rmLocal": S.ui.localNames.splice(+d.i,1); return render();
       case "startLocal": return startLocal();
       case "start": return startGame();
-      case "leave": return leave();
+      case "leave": S.ui.leaveAsk=false; return leave();
       case "view": S.view=d.id; return render();
       case "reveal": return reveal(+d.i);
       case "place": return place();
@@ -3153,6 +3293,18 @@ async function act(a, d={}){
       case "cPick": S.ui.pick = S.ui.pick===d.k ? null : d.k; S.ui.swapA=null; if(d.k==="pos" && S.ui.pick) S.ui.sheet=false; return render();
       case "reaim": return cardPos(d.pos);
       case "atk": S.ui.atk = S.ui.atk?.k===d.k ? null : {k:d.k}; S.ui.pick=null; return render();
+      case "cInfo": S.ui.cardInfo=d.k; S.ui.atk=null; return render();
+      case "cBack": S.ui.cardInfo=null; return render();
+      case "cUse": { const k=d.k; S.ui.cardInfo=null; if(isAtk(k)) return act("atk",{k}); if(k==="reroll") return act("cReroll",{k}); return act("cPick",{k}); }
+      case "atkBackStep": S.ui.atk={k:S.ui.atk.k}; return render();
+      case "leaveAsk": if(S.screen==="game"){ S.ui.leaveAsk=true; return render(); } return leave();
+      case "leaveNo": S.ui.leaveAsk=false; return render();
+      case "mute": S.ui.mute=!S.ui.mute; lsSet("ae_mute", S.ui.mute?"1":""); if(!S.ui.mute) sfx("card"); return render();
+      case "shareTeam": return shareTeam(d.id);
+      case "botLevel": S.ui.botLevel=d.v; return render();
+      case "botCount": S.ui.botCount=+d.v; return render();
+      case "hintsBot": S.ui.hints=d.v; return render();
+      case "startBot": { const me=(S.ui.name||"").trim(); if(!me){ S.ui.err="Digite seu nome."; return render(); } lsSet("ae_name", me); const names=[{name:me}]; for(let i=0;i<(S.ui.botCount||1);i++) names.push({name:nextBotName(names.map(x=>x.name)), bot:true, level:S.ui.botLevel||"medio"}); S.ui.localNames=names; return startLocal(); }
       case "atkTo": S.ui.atk = {...S.ui.atk, to:d.id, letters:[], his:null}; return render();
       case "atkPick": S.ui.atk = {...S.ui.atk, his:d.a||null}; return render();
       case "atkL": { const a=S.ui.atk; const set=new Set(a.letters||[]); set.has(d.l)?set.delete(d.l):(set.size<3&&set.add(d.l)); a.letters=[...set]; return render(); }
