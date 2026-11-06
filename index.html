@@ -372,6 +372,23 @@ body{background:var(--night)!important;background-image:none!important}
 @media (max-width:460px){.minilogo span{display:none}}
 .top .lbl{white-space:nowrap}
 
+/* ---- campeonato ---- */
+.simsec h2{margin:0}
+.scoreb{display:grid;grid-template-columns:1fr auto 64px auto 1fr;align-items:center;gap:8px;background:#0B0F14;border:1px solid #2f3b4d;border-radius:12px;padding:10px 12px}
+.scoreb .tn{font-weight:700;font-size:13.5px;line-height:1.15;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word}.scoreb .tn.r{text-align:right}
+.scoreb .sc{font-family:var(--f-display);font-weight:900;font-size:28px;color:#fff;min-width:22px;text-align:center}
+.scoreb .sc small{font-size:14px;color:var(--gold-hi);margin:0 3px}
+.scoreb .clk{font-family:var(--f-label);font-weight:800;font-size:12px;text-align:center;color:var(--gold-hi);background:rgba(212,175,55,.12);border-radius:999px;padding:3px 4px;text-transform:uppercase}
+.scoreb.done{padding:6px 10px}.scoreb.done .sc{font-size:20px}.scoreb.done .clk{color:var(--muted);background:none}
+.simsec.live{border-color:var(--gold)}
+.feed{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.feed li{padding:6px 10px;border-radius:8px;background:var(--panel2)}
+.feed li.goal,.feed li.pen{background:rgba(212,175,55,.16);border-left:3px solid var(--gold)}
+.feed li.goal b,.feed li.pen b{color:var(--gold-hi)}
+.feed li.new{animation:feedin .4s ease}
+@keyframes feedin{from{transform:translateY(-6px);opacity:0}}
+.cmp.tbl{font-size:13.5px;width:100%}.cmp.tbl td,.cmp.tbl th{text-align:center;padding:6px 4px}.cmp.tbl td:nth-child(2),.cmp.tbl th:nth-child(2){text-align:left}
+.cmp.tbl tr.win td{color:var(--gold-hi);font-weight:700}
 /* ---- melhorias de UX ---- */
 .btn.mini{padding:6px 10px;font-size:12px;border-radius:9px}
 .iconbtn{padding:9px 11px}.iconbtn svg{width:18px;height:18px;display:block}
@@ -2369,7 +2386,7 @@ async function createRoom(){
   if(!code){ S.ui.err="Não consegui criar a sala agora. Tente de novo."; return render(); }
   store=hostStore(mq, code, null);
   await store.set({ code, hostId:S.me, status:"lobby", createdAt:Date.now(), cardUses:2,
-    players:{[S.me]:{name, joinedAt:Date.now()}}, order:[], turn:null, round:0, log:[], votes:{}, hints:"auto" });
+    players:{[S.me]:{name, joinedAt:Date.now()}}, order:[], turn:null, round:0, log:[], votes:{}, hints:"auto", winMode:"ovr" });
   lsSet("ae_last", code);
   S.code=code; S.ui.err=""; subscribe();
 }
@@ -2496,7 +2513,7 @@ function startLocal(){
   const names = S.ui.localNames; if(names.length<2){ S.ui.err="Adicione pelo menos 2 jogadores."; return render(); }
   S.mode="local"; store=localStore(); S.code=null;
   const players={}; names.forEach((n,i)=>players[(n.bot?"bot":"l")+i]={name:n.name, joinedAt:i, ...(n.bot?{bot:true, level:n.level}:{})});
-  const room={ code:null, hostId:"local", status:"lobby", createdAt:Date.now(), cardUses:2, players, order:[], turn:null, round:0, log:[], votes:{}, hints:S.ui.hints||"auto" };
+  const room={ code:null, hostId:"local", status:"lobby", createdAt:Date.now(), cardUses:2, players, order:[], turn:null, round:0, log:[], votes:{}, hints:S.ui.hints||"auto", winMode:S.ui.winMode||"ovr" };
   store.set(buildStart(room)); S.ui.err=""; subscribe();
 }
 function buildStart(room){
@@ -2509,14 +2526,14 @@ function buildStart(room){
     shuffle([...Array(26).keys()]).slice(0,types.length).forEach((i,k) => cards[i] = types[k]);
     r.players[id] = { name:r.players[id].name, joinedAt:r.players[id].joinedAt, ...(r.players[id].bot?{bot:true, level:r.players[id].level||"medio"}:{}), board, cards, revealed:[], team:{}, hand:[], aim:null, pending:null };
   });
-  Object.assign(r, { status:"playing", order, turn:order[0], round:1, votes:{}, dey:null, log:[{t:Date.now(), text:"Começou! "+r.players[order[0]].name+" abre a partida."}] });
+  Object.assign(r, { status:"playing", order, turn:order[0], round:1, votes:{}, dey:null, sim:null, log:[{t:Date.now(), text:"Começou! "+r.players[order[0]].name+" abre a partida."}] });
   return r;
 }
 async function startGame(){ try{ await store.set(buildStart(S.room)); }catch(e){ toast("Não deu para começar. Tente de novo."); } }
 async function rematch(){
   const r = clone(S.room);
   Object.keys(r.players).forEach(id => r.players[id] = {name:r.players[id].name, joinedAt:r.players[id].joinedAt, ...(r.players[id].bot?{bot:true, level:r.players[id].level}:{})});
-  try{ await store.set(S.mode==="local" ? buildStart(r) : {...r, status:"lobby", order:[], turn:null, round:0, log:[], votes:{}}); }catch(e){ toast("Não deu para reiniciar."); }
+  try{ await store.set(S.mode==="local" ? buildStart(r) : {...r, status:"lobby", order:[], turn:null, round:0, log:[], votes:{}, sim:null, published:null}); }catch(e){ toast("Não deu para reiniciar."); }
 }
 function leave(){ if(mq){ try{mq.end(true);}catch(e){} mq=null; } if(unsub) unsub(); unsub=null; clearTimeout(netTimer); store=null; S.room=null; S.screen="home"; S.mode=null; S.view=null; S.ui.err=""; render(); }
 
@@ -2891,6 +2908,128 @@ async function skipTurn(){
   const players=clone(S.room.players); players[id]={...p, pending:null, aim:null};
   await write({ players:{[id]:{pending:null, aim:null}}, log:logPatch("O anfitrião pulou a vez de "+p.name), ...nextTurnPatch(players) });
 }
+const WIN_NOTE = {ovr:"Vence o time com maior overall. No fim, dá para simular um campeonato só por diversão.", camp:"No fim, os times jogam um campeonato simulado e o campeão leva. Com 2 times é final única, com prorrogação e pênaltis."};
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function teamStr(p){ const v=k=>slotOvr(p.team?.[k]) ?? 40, avg=a=>a.reduce((s,k)=>s+v(k),0)/a.length; return {att:avg(["pe","ca","pd"]), mid:avg(["vol","mc1","mc2"]), def:avg(["zg1","zg2","le","ld"]), gk:v("gol")}; }
+const SCORE_W = {ca:5, pe:3, pd:3, mc1:1.5, mc2:1.5, vol:.7, le:.4, ld:.4, zg1:.3, zg2:.3, gol:0};
+const PEN_ORDER = ["ca","pe","pd","mc1","mc2","vol","ld","le","zg1","zg2","gol"];
+let SIM_CACHE=null;
+function simResult(){
+  const r=S.room; if(!r?.sim) return null;
+  const key=r.sim.seed+":"+r.order.join(",");
+  if(SIM_CACHE?.key===key) return SIM_CACHE.res;
+  const res=simulate(r, r.sim.seed); SIM_CACHE={key,res}; return res;
+}
+function simulate(r, seed){
+  const rnd=mulberry32(seed), ids=[...r.order], n=ids.length, final=n===2;
+  const P=id=>r.players[id], ST=Object.fromEntries(ids.map(id=>[id,teamStr(P(id))]));
+  const pick=(id, wf)=>{ const t=P(id).team||{}; const opts=Object.keys(SCORE_W).filter(k=>t[k]).map(k=>[k, wf(k)*Math.pow((slotOvr(t[k])||50)/80,2)]); const tot=opts.reduce((a,b)=>a+b[1],0); let x=rnd()*tot; for(const [k,w] of opts){ x-=w; if(x<=0) return k; } return opts[0]?.[0]||"ca"; };
+  const nm=(id,k)=>P(id).team?.[k]?.n || "o "+k;
+  const xg=(A,B)=>Math.min(4, Math.max(.3, .85*Math.exp((ST[A].att-(.65*ST[B].def+.35*ST[B].gk))/16)*Math.exp((ST[A].mid-ST[B].mid)/30)));
+  const GOAL=["GOL! {n} não perdoa!","GOL! {n} de cabeça!","GOLAÇO de {n}, de fora da área!","GOL! {n} na saída do goleiro!","GOL! {n} completa o cruzamento!","GOL! {n} de pênalti!","GOL! {n} empurra para a rede!"];
+  const MISS=["Defesaça de {gk} no chute de {n}!","{n} acerta a trave!","{n} chuta por cima, por pouco!","{gk} salva em cima da linha!","{n} perde gol feito!"];
+  const tx=(arr,o)=>arr[Math.floor(rnd()*arr.length)].replace("{n}",o.n).replace("{gk}",o.gk||"o goleiro");
+  // calendário
+  let rounds=[];
+  if(final) rounds=[[[ids[0],ids[1]]]];
+  else { const L=[...ids]; if(L.length%2) L.push(null); const m=L.length; for(let k=0;k<m-1;k++){ const rd=[]; for(let i=0;i<m/2;i++){ const a=L[i], b=L[m-1-i]; if(a&&b) rd.push(k%2?[b,a]:[a,b]); } rounds.push(rd); L.splice(1,0,L.pop()); } }
+  const RD=final?14:12, out=[], scorers={}; let T=1.5;
+  const tbl=Object.fromEntries(ids.map(id=>[id,{id,J:0,V:0,E:0,D:0,GP:0,GC:0,Pts:0}]));
+  rounds.forEach((rd,ri)=>{
+    let end=T+RD;
+    const matches=rd.map(([a,b])=>{
+      const M={a,b,ga:0,gb:0,ev:[]}, xa=xg(a,b), xb=xg(b,a);
+      const tm=min=> min<=90 ? T+min/90*RD : T+RD+1+(min-90)/30*5;
+      const play=(from,to,f)=>{ for(let min=from;min<=to;min++){
+        for(const [side,me,op,x] of [["a",a,b,xa],["b",b,a,xb]]){
+          if(rnd()<x*f/90){ const k=pick(me,kk=>SCORE_W[kk]); const n=nm(me,k); M["g"+side]++; scorers[me+"|"+n]=(scorers[me+"|"+n]||{id:me,n,g:0}); scorers[me+"|"+n].g++; M.ev.push({ts:tm(min),min,side,kind:"goal",text:tx(GOAL,{n})}); }
+          else if(rnd()<x*f*.022){ const k=pick(me,kk=>SCORE_W[kk]); M.ev.push({ts:tm(min),min,side,kind:"miss",text:tx(MISS,{n:nm(me,k), gk:nm(op,"gol")})}); }
+        } } };
+      play(1,90,1);
+      if(final && M.ga===M.gb){ M.et=true; M.ev.push({ts:T+RD+.6,min:90,kind:"info",text:"Empate no tempo normal. Vai para a prorrogação!"}); play(91,120,.8); end=T+RD+6.5; }
+      if(final && M.ga===M.gb){
+        M.pens={pa:0,pb:0,k:[]}; let t=T+RD+7.5; M.ev.push({ts:t-.8,min:120,kind:"info",text:"Tudo igual. Decisão nos pênaltis!"});
+        const gkA=slotOvr(P(a).team?.gol)||50, gkB=slotOvr(P(b).team?.gol)||50, sh={a:[...PEN_ORDER].filter(k=>P(a).team?.[k]), b:[...PEN_ORDER].filter(k=>P(b).team?.[k])};
+        for(let i=0;i<30;i++){
+          for(const side of ["a","b"]){
+            const id=side==="a"?a:b, op=side==="a"?b:a, ks=sh[side][i%sh[side].length], sv=slotOvr(P(id).team[ks])||50, gk=side==="a"?gkB:gkA;
+            const ok=rnd()<Math.min(.92,Math.max(.55,.76+(sv-gk)/150)); if(ok) M.pens["p"+side]++;
+            M.pens.k.push({side,ok,n:nm(id,ks),ts:t}); M.ev.push({ts:t,min:120,side,kind:ok?"pen":"penx",text:ok?"Pênalti: "+nm(id,ks)+" converte!":"Pênalti: "+nm(op,"gol")+" defende a cobrança de "+nm(id,ks)+"!"}); t+=1.3;
+            const ka=M.pens.k.filter(x=>x.side==="a").length, kb=M.pens.k.filter(x=>x.side==="b").length;
+            if(i<5){ const ra=5-ka, rb=5-kb; if(M.pens.pa>M.pens.pb+rb || M.pens.pb>M.pens.pa+ra) break; }
+          }
+          const ka=M.pens.k.filter(x=>x.side==="a").length, kb=M.pens.k.filter(x=>x.side==="b").length;
+          if(ka===kb && ka>=5 && M.pens.pa!==M.pens.pb) break;
+          if(i<5){ const ra=5-ka, rb=5-kb; if(M.pens.pa>M.pens.pb+rb || M.pens.pb>M.pens.pa+ra) break; }
+        }
+        end=t+.6;
+      }
+      M.ev.sort((x,y)=>x.ts-y.ts);
+      const A=tbl[a], B=tbl[b]; A.J++; B.J++; A.GP+=M.ga; A.GC+=M.gb; B.GP+=M.gb; B.GC+=M.ga;
+      if(M.ga>M.gb){A.V++;A.Pts+=3;B.D++;} else if(M.gb>M.ga){B.V++;B.Pts+=3;A.D++;} else {A.E++;B.E++;A.Pts++;B.Pts++;}
+      M.winner = M.ga>M.gb ? a : M.gb>M.ga ? b : M.pens ? (M.pens.pa>M.pens.pb?a:b) : null;
+      return M;
+    });
+    out.push({ts:T, te:end, ri, matches}); T=end+2.5;
+  });
+  const table=Object.values(tbl).sort((x,y)=>(y.Pts-x.Pts)||((y.GP-y.GC)-(x.GP-x.GC))||(y.GP-x.GP)||((teamOvr(P(y.id))||0)-(teamOvr(P(x.id))||0)));
+  const champ = final ? out[0].matches[0].winner : table[0].id;
+  const top=Object.values(scorers).sort((x,y)=>y.g-x.g)[0]||null;
+  return {final, rounds:out, total:T-1, table, champ, top};
+}
+function simClock(){
+  const r=S.room; if(!r?.sim) return {t:0,speed:1};
+  if(!S.ui.simClk || S.ui.simClk.key!==r.sim.seed) S.ui.simClk={key:r.sim.seed, base:Math.max(0,(Date.now()-r.sim.at)/1000), t0:Date.now(), speed:1};
+  const c=S.ui.simClk; return {t:c.base+(Date.now()-c.t0)/1000*c.speed, speed:c.speed};
+}
+async function simStart(){
+  const r=S.room; if(!r || r.status!=="done" || r.sim) return;
+  if(S.mode==="online" && r.hostId!==S.me) return;
+  S.ui.simClk=null; await write({ sim:{seed:(Math.random()*2**31)|0, at:Date.now()} });
+}
+let simTimer=null, simGoals=-1;
+function simTick(){
+  const box=document.getElementById("simbox"); const sm=simResult();
+  if(!box || !sm || S.screen!=="done"){ clearInterval(simTimer); simTimer=null; return; }
+  const {t}=simClock();
+  const g=sm.rounds.flatMap(rd=>rd.matches.flatMap(m=>m.ev.filter(e=>(e.kind==="goal"||e.kind==="pen") && e.ts<=t))).length;
+  if(simGoals>=0 && g>simGoals) sfx(g%2?"goal":"card"); simGoals=g;
+  if(t>=sm.total){ clearInterval(simTimer); simTimer=null; S.ui.simShown=S.room.sim.seed; sfx("card"); render(); return; }
+  box.innerHTML=simLiveHTML(sm,t);
+}
+function simEnsureTimer(){ const sm=simResult(); if(!sm) return; if(simClock().t<sm.total && !simTimer){ simGoals=-1; simTimer=setInterval(simTick,200); } }
+function simLiveHTML(sm,t){
+  const P=id=>S.room.players[id];
+  const rd=[...sm.rounds].reverse().find(x=>x.ts<=t) || sm.rounds[0];
+  const clock=m=>{ const ev=m.ev; if(t>=rd.te) return m.pens?"Fim · pênaltis":m.et?"Fim · prorrogação":"Fim de jogo";
+    if(m.pens && t>=m.pens.k[0].ts-0.8) return "Pênaltis"; const RD=sm.final?14:12; const el=t-rd.ts;
+    if(el<=RD) return Math.max(0,Math.min(90,Math.floor(el/RD*90)))+"'"; if(m.et && el<=RD+6) return el<RD+1 ? "Intervalo" : Math.min(120,90+Math.floor((el-RD-1)/5*30))+"'"; return "Fim de jogo"; };
+  const sc=(m,side)=>m.ev.filter(e=>e.side===side && e.kind==="goal" && e.ts<=t).length;
+  const pens=(m,side)=>m.pens ? m.pens.k.filter(k=>k.side===side && k.ok && k.ts<=t).length : 0;
+  const showP=m=>m.pens && t>=m.pens.k[0].ts;
+  const feed=sm.rounds.flatMap(x=>x.matches.flatMap(m=>m.ev.map(e=>({...e, m})))).filter(e=>e.ts<=t).sort((a,b)=>b.ts-a.ts).slice(0,6);
+  const title = sm.final ? "Final" : "Rodada "+(rd.ri+1)+" de "+sm.rounds.length;
+  return `<div class="row" style="justify-content:space-between;align-items:center"><span class="lbl">${title}</span><div class="row" style="gap:6px"><button class="btn mini" data-act="simFast">${simClock().speed>1?"Velocidade normal":"Acelerar ×4"}</button><button class="btn mini" data-act="simSkip">Pular para o resultado</button></div></div>
+    <div class="stack" style="gap:8px">${rd.matches.map(m=>`<div class="scoreb"><span class="tn">${esc(P(m.a).name)}</span><span class="sc">${sc(m,"a")}${showP(m)?`<small>(${pens(m,"a")})</small>`:""}</span><span class="clk">${clock(m)}</span><span class="sc">${showP(m)?`<small>(${pens(m,"b")})</small>`:""}${sc(m,"b")}</span><span class="tn r">${esc(P(m.b).name)}</span></div>`).join("")}</div>
+    ${(()=>{ const playing=new Set(rd.matches.flatMap(m=>[m.a,m.b])); const rest=S.room.order.filter(id=>!playing.has(id)); return rest.length?`<p class="note" style="margin:0">Folga nesta rodada: <b>${rest.map(id=>esc(P(id).name)).join(", ")}</b></p>`:""; })()}
+    <ul class="feed">${feed.map((e,i)=>`<li class="${e.kind} ${i===0?"new":""}"><b>${e.min}'</b> ${esc(e.text)}${e.side?` <span class="note">(${esc(P(e.side==="a"?e.m.a:e.m.b).name)})</span>`:""}</li>`).join("") || '<li class="note">A bola vai rolar…</li>'}</ul>`;
+}
+function simResultHTML(sm){
+  const P=id=>S.room.players[id];
+  const games = sm.rounds.map(rd=>`<div class="stack" style="gap:4px">${sm.final?"":`<span class="lbl">Rodada ${rd.ri+1}</span>`}${rd.matches.map(m=>`<div class="scoreb done"><span class="tn">${esc(P(m.a).name)}</span><span class="sc">${m.ga}${m.pens?`<small>(${m.pens.pa})</small>`:""}</span><span class="clk">${m.pens?"pên.":m.et?"prorr.":"fim"}</span><span class="sc">${m.pens?`<small>(${m.pens.pb})</small>`:""}${m.gb}</span><span class="tn r">${esc(P(m.b).name)}</span></div>`).join("")}</div>`).join("");
+  const tbl = sm.final ? "" : `<div class="cmpwrap"><table class="cmp tbl"><thead><tr><th>#</th><th>Time</th><th>P</th><th>V</th><th>E</th><th>D</th><th>SG</th></tr></thead><tbody>${sm.table.map((x,i)=>`<tr class="${i===0?"win":""}"><td>${i+1}</td><td>${esc(P(x.id).name)}</td><td><b>${x.Pts}</b></td><td>${x.V}</td><td>${x.E}</td><td>${x.D}</td><td>${x.GP-x.GC>0?"+":""}${x.GP-x.GC}</td></tr>`).join("")}</tbody></table></div>`;
+  return `<div class="stack" style="gap:10px">${games}${tbl}${sm.top?`<p class="note" style="margin:0">Artilheiro: <b>${esc(sm.top.n)}</b> (${esc(P(sm.top.id).name)}), ${sm.top.g} gol${sm.top.g>1?"s":""}.</p>`:""}</div>`;
+}
+function simSectionHTML(){
+  const r=S.room, camp=(r.winMode||"ovr")==="camp", online=S.mode==="online", canStart=!online || r.hostId===S.me;
+  const sm=simResult();
+  if(!sm) return `<section class="panel stack simsec" id="simbox0"><span class="lbl">${camp?"Campeonato":"Campeonato simulado"}</span><h2 style="font-size:28px">${camp ? (r.order.length===2?"Agora é a final!":"Agora é o campeonato!") : "E se esses times entrassem em campo?"}</h2>
+    <p class="note" style="margin:0">${r.order.length===2 ? "Final única: se empatar, tem prorrogação e pênaltis." : "Todos jogam contra todos. Vitória vale 3 pontos e empate vale 1."} ${camp ? "Quem for campeão vence a partida." : "É só por diversão: o vencedor continua sendo o maior overall."}</p>
+    ${canStart ? `<button class="btn gold big" data-act="simStart"><span class="balli">${BALL_SVG}</span>${r.order.length===2?"Jogar a final":"Simular o campeonato"}</button>` : '<p class="note" style="margin:0">Esperando o anfitrião começar.</p>'}</section>`;
+  const {t}=simClock();
+  if(t<sm.total) return `<section class="panel stack simsec live" id="simbox">${simLiveHTML(sm,t)}</section>`;
+  return `<section class="panel stack simsec"><span class="lbl">${sm.final?"Final":"Campeonato"}</span><h2 style="font-size:26px">${esc(r.players[sm.champ].name)} ${camp?"é o campeão!":"seria o campeão"}</h2>${simResultHTML(sm)}</section>`;
+}
 async function shareTeam(id){
   const p=S.room?.players?.[id]; if(!p) return;
   try{
@@ -3009,6 +3148,7 @@ function vBot(){
     <div class="stack" style="gap:6px"><span class="lbl">Nível do robô</span><div class="seg">${Object.entries(BOT_LEVEL).map(([k,v])=>`<button data-act="botLevel" data-v="${k}" aria-pressed="${lvl===k}">${v}</button>`).join("")}</div><p class="note" style="margin:0">${({facil:"Erra bastante e escala qualquer um. Bom para aprender.",medio:"Joga bem, mas às vezes escolhe mal.",craque:"Conhece todo mundo e usa as cartinhas sem dó."})[lvl]}</p></div>
     <div class="stack" style="gap:6px"><span class="lbl">Quantos robôs</span><div class="seg">${[1,2,3].map(k=>`<button data-act="botCount" data-v="${k}" aria-pressed="${n===k}">${k}</button>`).join("")}</div></div>
     <div class="stack" style="gap:6px"><span class="lbl">Ajuda para escalar</span><div class="seg">${[["off","Sem dicas"],["auto","Autocompletar"],["full","Sugestões"]].map(([k,v])=>`<button data-act="hintsBot" data-v="${k}" aria-pressed="${h===k}">${v}</button>`).join("")}</div></div>
+    <div class="stack" style="gap:6px"><span class="lbl">Como decide o vencedor</span><div class="seg">${[["ovr","Overall"],["camp","Campeonato"]].map(([k,v])=>`<button data-act="winLocal" data-v="${k}" aria-pressed="${(S.ui.winMode||"ovr")===k}">${v}</button>`).join("")}</div><p class="note" style="margin:0">${WIN_NOTE[S.ui.winMode||"ovr"]}</p></div>
     <div class="err" role="alert">${esc(S.ui.err)}</div>
     <button class="btn gold big" data-act="startBot"><svg class="bi" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l13 8-13 8z" fill="currentColor"/></svg>Começar</button>
   </div>`;
@@ -3021,6 +3161,7 @@ function vLocal(){
     <div class="stack" style="gap:6px"><span class="lbl">Adicionar robô</span><div class="row">${Object.entries(BOT_LEVEL).map(([k,v])=>`<button class="btn" data-act="addBotLocal" data-l="${k}">Robô ${v}</button>`).join("")}</div></div>
     <ul class="plist">${S.ui.localNames.map((n,i)=>`<li><span>${esc(n.name)}${n.bot?` <span class="lbl">robô ${BOT_LEVEL[n.level]}</span>`:""}</span><button class="btn ghost" data-act="rmLocal" data-i="${i}" aria-label="Remover ${esc(n.name)}">Remover</button></li>`).join("") || '<li class="note">Ninguém ainda.</li>'}</ul>
     <div class="stack" style="gap:6px"><span class="lbl">Ajuda para escalar</span><div class="seg">${[["off","Sem dicas"],["auto","Autocompletar"],["full","Sugestões"]].map(([k,v])=>`<button data-act="hintsLocal" data-v="${k}" aria-pressed="${(S.ui.hints||"auto")===k}">${v}</button>`).join("")}</div><p class="note" style="margin:0">${({off:"Ninguém vê nomes: cada um tem que lembrar e digitar.",auto:"Os nomes aparecem só depois de digitar 3 letras.",full:"Mostra sugestões assim que a letra sai e obriga a escolher alguém da posição, se existir."})[(S.ui.hints||"auto")]}</p></div>
+    <div class="stack" style="gap:6px"><span class="lbl">Como decide o vencedor</span><div class="seg">${[["ovr","Overall"],["camp","Campeonato"]].map(([k,v])=>`<button data-act="winLocal" data-v="${k}" aria-pressed="${(S.ui.winMode||"ovr")===k}">${v}</button>`).join("")}</div><p class="note" style="margin:0">${WIN_NOTE[S.ui.winMode||"ovr"]}</p></div>
     <div class="err" role="alert">${esc(S.ui.err)}</div>
     <button class="btn gold" data-act="startLocal" ${S.ui.localNames.length<2?"disabled":""}>Começar partida</button>
   </div>`;
@@ -3039,6 +3180,7 @@ function vLobby(){
       </div>
       <ul class="plist">${ids.map(id=>`<li><span>${esc(r.players[id].name)}${id===S.me?" (você)":""}${r.players[id].bot?` <span class="lbl">robô ${BOT_LEVEL[r.players[id].level]||""}</span>`:""}</span>${id===r.hostId?'<span class="lbl">anfitrião</span>':""}${host && r.players[id].bot?`<button class="btn ghost" data-act="rmBotRoom" data-id="${id}">Remover</button>`:""}</li>`).join("")}</ul>
       ${host ? `<div class="stack" style="gap:6px"><span class="lbl">Ajuda para escalar</span><div class="seg">${[["off","Sem dicas"],["auto","Autocompletar"],["full","Sugestões"]].map(([k,v])=>`<button data-act="hintsRoom" data-v="${k}" aria-pressed="${(r.hints||"auto")===k}">${v}</button>`).join("")}</div><p class="note" style="margin:0">${({off:"Ninguém vê nomes: cada um tem que lembrar e digitar.",auto:"Os nomes aparecem só depois de digitar 3 letras.",full:"Mostra sugestões de jogadores assim que a letra sai."})[(r.hints||"auto")]}</p></div>` : `<p class="note" style="margin:0">Ajuda para escalar: <b>${({off:"Sem dicas",auto:"Autocompletar",full:"Sugestões"})[r.hints||"auto"]}</b></p>`}
+      ${host ? `<div class="stack" style="gap:6px"><span class="lbl">Como decide o vencedor</span><div class="seg">${[["ovr","Overall"],["camp","Campeonato"]].map(([k,v])=>`<button data-act="winRoom" data-v="${k}" aria-pressed="${(r.winMode||"ovr")===k}">${v}</button>`).join("")}</div><p class="note" style="margin:0">${WIN_NOTE[r.winMode||"ovr"]}</p></div>` : `<p class="note" style="margin:0">Vencedor: <b>${(r.winMode||"ovr")==="camp"?"campeonato simulado":"maior overall"}</b>.</p>`}
       ${host ? `<div class="stack" style="gap:6px"><span class="lbl">Adicionar robô</span><div class="row">${Object.entries(BOT_LEVEL).map(([k,v])=>`<button class="btn" data-act="addBotRoom" data-l="${k}">Robô ${v}</button>`).join("")}</div><p class="note" style="margin:0">Os robôs jogam pelo seu celular, então deixe o jogo aberto até o fim.</p></div>` : ""}
       ${host ? `<button class="btn gold" data-act="start">Começar com ${ids.length} jogador${ids.length>1?"es":""}</button>` : '<p class="note">O anfitrião começa a partida quando todos entrarem.</p>'}
     </div>
@@ -3207,17 +3349,22 @@ function vDone(){
   KEYS.forEach(k=>{ const vals=r.order.map(id=>slotOvr(r.players[id].team?.[k])??-1); const m=Math.max(...vals); best[k]=m; if(vals.filter(v=>v===m).length===1){ const w=r.order[vals.indexOf(m)]; wins[w]=(wins[w]||0)+1; } });
   const online=S.mode==="online", host = online ? r.hostId===S.me : true;
   const rank=[...r.order].sort((a,b)=>((teamOvr(r.players[b])||0)-(teamOvr(r.players[a])||0)) || ((wins[b]||0)-(wins[a]||0)));
-  const W=r.players[rank[0]], tie = rank.length>1 && teamOvr(r.players[rank[1]])===teamOvr(W) && (wins[rank[1]]||0)===(wins[rank[0]]||0);
+  const camp=(r.winMode||"ovr")==="camp", sm=simResult(), simOver = sm && simClock().t>=sm.total;
+  if(camp && simOver){ const champ=sm.champ; const tb=sm.final ? [champ, ...rank.filter(x=>x!==champ)] : sm.table.map(x=>x.id); rank.splice(0, rank.length, ...tb); }
+  const W=r.players[rank[0]], tie = !camp && rank.length>1 && teamOvr(r.players[rank[1]])===teamOvr(W) && (wins[rank[1]]||0)===(wins[rank[0]]||0);
   const iWon = rank[0]===S.me && online;
   const hero = `<section class="hero-win">${matchMedia("(prefers-reduced-motion: reduce)").matches?"":`<div class="confetti">${Array.from({length:28},(_,i)=>`<i style="--x:${(i*37)%100}%;--d:${(i%7)*0.25}s;--c:${["#f6d98a","var(--atk)","#5fd38d","#eef3ea"][i%4]}"></i>`).join("")}</div>`}
     <div class="trophy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg></div>
-    <span class="lbl">${tie?"Empate no overall":"Fim de jogo"}</span>
+    <span class="lbl">${tie?"Empate no overall":camp?(sm?.final?"Campeão da final":"Campeão"):"Fim de jogo"}</span>
     <h1>${tie ? "Deu empate!" : iWon ? "Você venceu!" : esc(W.name)+" venceu!"}</h1>
-    <p class="note">${tie ? "Os dois times terminaram com o mesmo overall. Publique no mural e deixe a galera desempatar." : "Maior overall: <b>"+teamOvr(W)+"</b>"+((wins[rank[0]]||0)?", com "+wins[rank[0]]+(wins[rank[0]]===1?" posição vencida":" posições vencidas"):"")+"."}</p>
-    <ol class="podium">${rank.map((id,i)=>`<li class="${i===0?"first":""}"><span class="pl">${i+1}º</span><span class="pn">${esc(r.players[id].name)}${r.players[id].bot?' <span class="lbl">robô</span>':""}</span><span class="ovrb ${ovrTier(teamOvr(r.players[id])||0)}">${teamOvr(r.players[id])??"—"}</span></li>`).join("")}</ol>
+    <p class="note">${camp && sm ? (sm.final ? "Campeão da final"+(sm.rounds[0].matches[0].pens?" nos pênaltis":"")+"." : "Campeão do campeonato com "+sm.table[0].Pts+" pontos.") : tie ? "Os dois times terminaram com o mesmo overall. Publique no mural e deixe a galera desempatar." : "Maior overall: <b>"+teamOvr(W)+"</b>"+((wins[rank[0]]||0)?", com "+wins[rank[0]]+(wins[rank[0]]===1?" posição vencida":" posições vencidas"):"")+"."}</p>
+    <ol class="podium">${rank.map((id,i)=>`<li class="${i===0?"first":""}"><span class="pl">${i+1}º</span><span class="pn">${esc(r.players[id].name)}${r.players[id].bot?' <span class="lbl">robô</span>':""}</span>${camp && sm && !sm.final ? `<span class="ovrb">${sm.table.find(x=>x.id===id).Pts} pts</span>` : `<span class="ovrb ${ovrTier(teamOvr(r.players[id])||0)}">${teamOvr(r.players[id])??"—"}</span>`}</li>`).join("")}</ol>
   </section>`;
+  setTimeout(simEnsureTimer, 0);
+  const waitCamp = camp && !simOver;
   return `<div class="top"><div class="row"><span class="lbl">Resultado</span></div><button class="btn ghost" data-act="leave">Sair</button></div>
-  ${hero}
+  ${waitCamp ? simSectionHTML() : hero + (camp ? simSectionHTML().replace('class="panel stack simsec"','class="panel stack simsec" style="margin-top:14px"') : "")}
+  ${!camp ? `<div style="margin-top:14px">${simSectionHTML()}</div>` : ""}
   <h2 style="font-size:30px;margin:18px 0 6px">Times escalados</h2>
   <p class="note" style="margin:0 0 14px">${online ? (myVote ? "Voto registrado. Dá para mudar até todo mundo votar." : "Qual time ficou melhor? Vote em um time que não seja o seu.") : "Qual time ficou melhor? Decidam aí na resenha."}</p>
   <div class="teams">${[...r.order].sort((a,b)=>(teamOvr(r.players[b])||0)-(teamOvr(r.players[a])||0)).map(id=>{const p=r.players[id];return `<div class="panel team stack"><div class="row" style="justify-content:space-between"><div><h3>${esc(p.name)}</h3><span class="note">${Object.values(p.team||{}).filter(t=>t.ok!==false).length} de 11 na posição · venceu ${wins[id]||0} posições</span></div><div class="teamovr ${ovrTier(teamOvr(p)||0)}"><small>OVR</small>${teamOvr(p)??"—"}</div>${online?`<span class="votes">${tally[id]||0} voto${(tally[id]||0)===1?"":"s"}</span>`:""}</div>
@@ -3272,6 +3419,11 @@ async function act(a, d={}){
       case "onbEnd": S.ui.onb=null; lsSet("ae_onb","1"); return render();
       case "hintsLocal": S.ui.hints=d.v; return render();
       case "hintsRoom": if(S.room?.hostId===S.me) await write({hints:d.v}); return;
+      case "winRoom": if(S.room?.hostId===S.me) await write({winMode:d.v}); return;
+      case "winLocal": S.ui.winMode=d.v; return render();
+      case "simStart": return simStart();
+      case "simFast": { const c=simClock(); S.ui.simClk={key:S.room.sim.seed, base:c.t, t0:Date.now(), speed:c.speed===1?4:1}; return render(); }
+      case "simSkip": { const sm=simResult(); S.ui.simClk={key:S.room.sim.seed, base:sm.total+1, t0:Date.now(), speed:1}; clearInterval(simTimer); simTimer=null; return render(); }
       case "muralPublish": return publishMural();
       case "muralVote": return voteMural(d.id, d.k);
       case "muralCopy": return copyMural(d.id);
